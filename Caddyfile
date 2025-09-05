@@ -1,0 +1,23 @@
+localhost:12345 {
+    handle_path /remote/* {
+        reverse_proxy http://192.168.2.50:2375
+    }
+
+    handle_path /local/* {
+        reverse_proxy unix//var/run/docker.sock
+    }
+
+    handle {
+        root * ./build
+
+        try_files {path} /
+
+        file_server
+    }
+
+    tls internal
+
+    @http3 {
+        protocol h3
+    }
+}

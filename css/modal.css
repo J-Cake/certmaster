@@ -1,0 +1,34 @@
+:is(dialog, div[popover]) {
+    position: fixed;
+
+    padding: var(--spacing-m);
+
+    min-width: var(--element-s);
+    max-height: 90vh;
+
+    overflow: auto;
+
+    background: var(--background);
+    /*--background: var(--background-02);*/
+
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow-l);
+
+    border: var(--border-dull);
+    border-color: var(--background-02);
+    color: var(--foreground-secondary);
+
+    font-size: var(--font-size-s);
+}
+
+:is(dialog, div[popover]) > button.close-btn {
+    position: absolute;
+
+    width: var(--spacing-xl);
+    height: var(--spacing-xl);
+
+    color: var(--foreground-secondary);
+
+    top: var(--spacing-m);
+    right: var(--spacing-m);
+}

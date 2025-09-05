@@ -1,0 +1,117 @@
+button, .button, select, input[type="button"], input[type="text"], input[type="number"], input[type="url"], input[type="password"], input[type="search"] {
+    padding: var(--spacing-s) var(--spacing-m);
+    cursor: pointer;
+
+    border: none;
+
+    display: flex;
+    gap: var(--spacing-m);
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: var(--radius-s);
+
+    white-space: nowrap;
+}
+
+button, .button, input[type="button"] { text-align: center; }
+select { text-align: left; }
+
+.button-group :is(button, .button, select, input[type="button"], input[type="text"], input[type="number"], input[type="url"], input[type="password"], input[type="search"]):not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+}
+
+.button-group :is(button, .button, select, input[type="button"], input[type="text"], input[type="number"], input[type="url"], input[type="password"], input[type="search"]):not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.button-group {
+    display: flex;
+    /*box-shadow: var(--shadow-l);*/
+    /*border-radius: var(--radius-s);*/
+    overflow: visible;
+}
+
+.button-group :is(button, .button, select, input[type="button"], input[type="text"], input[type="number"], input[type="url"], input[type="password"], input[type="search"]) {
+    box-shadow: none;
+}
+
+/*.button-group :is(button, select):not(.symbolic) {*/
+/*    flex: 1;*/
+/*}*/
+
+:is(button, .button, select, input[type="button"], input[type="text"], input[type="number"], input[type="url"], input[type="password"], input[type="search"]):disabled {
+    opacity: 0.5;
+    filter: brightness(var(--delta));
+}
+
+:is(button, input[type="button"], .button, select):hover {
+    filter: brightness(var(--delta));
+}
+
+:is(button, .button, input[type="button"]).symbolic {
+    font-size: 1em;
+    line-height: 1em;
+    padding: var(--spacing-s);
+}
+
+:is(button, .button, input[type="button"], select).primary {
+    background: var(--accent);
+    border: var(--border-dull);
+    border-color: var(--accent-solid);
+    color: var(--foreground-accent);
+}
+
+:is(button, .button, input[type="button"], select), select, :is(button, .button, input[type="button"], select).secondary {
+    background: var(--secondary);
+    border: var(--border-dull);
+    border-color: var(--secondary-solid);
+    color: var(--foreground-secondary);
+}
+
+:is(button, .button, input[type="button"], select).tertiary {
+    background: transparent;
+    color: var(--foreground-03);
+}
+
+:is(button, .button, input[type="button"]).tertiary.symbolic {
+    background: transparent;
+    color: var(--foreground);
+    border: none;
+    box-shadow: none;
+}
+
+:is(button, .button, input[type="button"], select).flat {
+    background: transparent;
+    border: none;
+    color: inherit;
+    box-shadow: none;
+    display: inline;
+    padding: 0;
+}
+
+:is(button, .button, input[type="button"], select).success {
+    background: var(--green);
+    border: var(--border-dull);
+    border-color: var(--green-solid);
+    color: var(--foreground);
+}
+
+:is(button, .button, input[type="button"], select).warning {
+    background: var(--orange);
+    border: var(--border-dull);
+    border-color: var(--orange-solid);
+    color: var(--foreground);
+}
+
+:is(button, .button, input[type="button"], select).danger {
+    background: var(--red);
+    border: var(--border-dull);
+    border-color: var(--red-solid);
+    color: var(--foreground-accent);
+}

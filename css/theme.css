@@ -1,0 +1,215 @@
+@import url('https://fonts.googleapis.com/css2?family=Cascadia+Mono:ital,wght@0,200..700;1,200..700&family=Inconsolata:wght@200..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Rasa:ital,wght@0,300..700;1,300..700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200");
+
+/* Base Values */
+
+:root {
+    /* Base Values */
+    --spacing-xxs: 2px;
+    --spacing-xs: 4px;
+    --spacing-s: 7px;
+    --spacing-m: 12px;
+    --spacing-l: 24px;
+    --spacing-xl: 32px;
+    --spacing-xxl: 64px;
+
+    --element-xxs: 95px;
+    --element-xs: 160px;
+    --element-s: 250px;
+    --element-m: 520px;
+    --element-l: 840px;
+    --element-xl: 1200px;
+    --element-xxl: 1900px;
+
+    --lightness-xxd: 0%;
+    --lightness-xd: 10%;
+    --lightness-d: 25%;
+    --lightness-m: 50%;
+    --lightness-b: 75%;
+    --lightness-xb: 90%;
+    --lightness-xxb: 100%;
+
+    --radius-xxs: var(--spacing-xxs);
+    --radius-xs: var(--spacing-xs);
+    --radius-s: var(--spacing-s);
+    --radius-m: var(--spacing-m);
+    --radius-l: calc(var(--spacing-m) + var(--spacing-s));
+    --radius-xl: var(--spacing-xl);
+    --radius-xxl: var(--spacing-xxl);
+
+    --shade-01: hsl(0, 0%, var(--lightness-xxd));
+    --shade-02: hsl(0, 0%, var(--lightness-xd));
+    --shade-03: hsl(0, 0%, var(--lightness-d));
+    --shade-04: hsl(0, 0%, var(--lightness-m));
+    --shade-05: hsl(0, 0%, var(--lightness-b));
+    --shade-06: hsl(0, 0%, var(--lightness-xb));
+    --shade-07: hsl(0, 0%, var(--lightness-xxb));
+
+    --font-size-xxs: 6pt;
+    --font-size-xs: 7pt;
+    --font-size-s: 9pt;
+    --font-size-m: 11pt;
+    --font-size-l: 14pt;
+    --font-size-xl: 19pt;
+    --font-size-xxl: 24pt;
+
+    --timing-xxs: 0.1s;
+    --timing-xs: 0.2s;
+    --timing-s: 0.5s;
+    --timing-m: 1s;
+    --timing-l: 1.6s;
+    --timing-xl: 3.8s;
+    --timing-xxl: 6.1s;
+}
+
+/* Theme values */
+:root {
+    /* Static values */
+
+    --font: "Poppins", Helvetica, Arial, sans-serif;
+    --font-monospace: "Inconsolata", "Source Sans Pro", consolas, monospace;
+    --font-icon: "Material Symbols Outlined";
+
+    --editor-font: var(--font-size-m) var(--font-monospace);
+
+    --font-xxs: var(--font-size-xxs) var(--font);
+    --font-xxs-bold: bold var(--font-size-xxs) var(--font);
+    --font-xs: var(--font-size-xs) var(--font);
+    --font-xs-bold: bold var(--font-size-xs) var(--font);
+    --font-s: var(--font-size-s) var(--font);
+    --font-s-bold: bold var(--font-size-s) var(--font);
+    --font-m: var(--font-size-m) var(--font);
+    --font-m-bold: bold var(--font-size-m) var(--font);
+    --font-l: var(--font-size-l) var(--font);
+    --font-l-bold: bold var(--font-size-l) var(--font);
+    --font-xl: var(--font-size-xl) var(--font);
+    --font-xl-bold: bold var(--font-size-xl) var(--font);
+    --font-xxl: var(--font-size-xxl) var(--font);
+    --font-xxl-bold: bold var(--font-size-xxl) var(--font);
+
+    --font-heading-l: bold 2em var(--font);
+    --font-heading-m: bold 1.75em var(--font);
+    --font-heading-s: bold 1.5em var(--font);
+
+    --icon: 300 1.5em var(--font-icon);
+
+    --font-article: var(--font-size-m) var(--font);
+
+    --foreground: var(--foreground-01);
+    --background: var(--background-01);
+
+    --foreground-secondary: var(--foreground-03);
+    --background-secondary: var(--background-01);
+
+    --foreground-accent: var(--foreground-07);
+    --background-accent: var(--background-01);
+
+    /* Theme Values */
+
+    --accent-h: 172deg;
+    --accent-s: 22%;
+    --accent-l: 50%;
+    --accent-a: 81%;
+    --accent-a-solid: 81%;
+    --accent: hsla(var(--accent-h), var(--accent-s), var(--accent-l), var(--accent-a));
+    --accent-solid: hsla(var(--accent-h), var(--accent-s), var(--accent-l), var(--accent-a-solid));
+
+    --secondary: #bfbfbfcf;
+    --secondary-solid: #bfbfbfff;
+
+    --red: #d87171cf;
+    --red-solid: #d87171ff;
+    --green: #9fda97cf;
+    --green-solid: #9fda97ff;
+    --blue: #9ec3d1cf;
+    --blue-solid: #9ec3d1ff;
+    --yellow: #f1e2a1cf;
+    --yellow-solid: #f1e2a1ff;
+    --orange: #e3c39dcf;
+    --orange-solid: #e3c39dff;
+
+    --border-simple: var(--spacing-xxs) solid var(--foreground-03);
+    --border-dull: 1px solid var(--foreground-05);
+    --border-accent: 3px solid var(--accent);
+
+    /* These radius values are used by widgets such as buttons and checkboxes */
+    --widget-radius-s: var(--radius-xs);
+    --widget-radius-m: var(--radius-s);
+    --widget-radius-l: var(--radius-m);
+
+    --shadow-s: 0 0 var(--spacing-s) hsla(0, 0%, var(--lightness-xd), 25%);
+    --shadow-m: 0 0 var(--spacing-m) hsla(0, 0%, var(--lightness-xd), 30%);
+    --shadow-l: 0 0 var(--spacing-l) hsla(0, 0%, var(--lightness-xd), 35%);
+
+    /* Shadow values used by widgets */
+    --widget-shadow: 0;
+}
+
+@media screen and (prefers-color-scheme: light) {
+    :root {
+        --background-01: var(--shade-07);
+        --foreground-01: var(--shade-01);
+
+        --background-02: var(--shade-06);
+        --foreground-02: var(--shade-02);
+
+        --background-03: var(--shade-05);
+        --foreground-03: var(--shade-03);
+
+        --background-04: var(--shade-04);
+        --foreground-04: var(--shade-04);
+
+        --background-05: var(--shade-03);
+        --foreground-05: var(--shade-05);
+
+        --background-06: var(--shade-02);
+        --foreground-06: var(--shade-06);
+
+        --background-07: var(--shade-01);
+        --foreground-07: var(--shade-07);
+
+        --background: var(--background-01);
+        --background-dull: rgba(0, 0, 0, 0.015);
+
+        /* A factor used to alter a value under certain conditions */
+        --delta: 0.8;
+
+        --secondary: #bfbfbfcf;
+        --secondary-solid: #bfbfbfff;
+    }
+}
+
+/* Dark theme */
+@media screen and (prefers-color-scheme: dark) {
+    :root {
+        --background-01: var(--shade-01);
+        --foreground-01: var(--shade-07);
+
+        --background-02: var(--shade-02);
+        --foreground-02: var(--shade-06);
+
+        --background-03: var(--shade-03);
+        --foreground-03: var(--shade-05);
+
+        --background-04: var(--shade-04);
+        --foreground-04: var(--shade-04);
+
+        --background-05: var(--shade-05);
+        --foreground-05: var(--shade-03);
+
+        --background-06: var(--shade-06);
+        --foreground-06: var(--shade-02);
+
+        --background-07: var(--shade-07);
+        --foreground-07: var(--shade-01);
+
+        --background: var(--background-01);
+        --background-dull: rgba(255, 255, 255, 0.05);
+
+        /* A factor used to alter a value under certain conditions */
+        --delta: 1.2;
+
+        --secondary: #494949CF;
+        --secondary-solid: #494949FF;
+    }
+}

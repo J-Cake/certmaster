@@ -1,0 +1,31 @@
+table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    margin-block: var(--spacing-m);
+}
+
+thead, thead tr, thead th {
+    /*background: var(--background-03);*/
+    color: var(--foreground-secondary);
+
+    text-align: left;
+
+    border-bottom: var(--border-dull);
+
+    white-space: nowrap;
+}
+
+th:not(:last-child) {
+    border-right: var(--border-dull);
+}
+
+th, td {
+    padding: var(--spacing-s) var(--spacing-m);
+    white-space: nowrap;
+}
+
+tr:nth-child(even) {
+    background: var(--background-dull);
+}

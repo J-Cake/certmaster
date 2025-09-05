@@ -1,0 +1,50 @@
+input[type="checkbox"].switch {
+    appearance: none;
+
+    --dim: 16px;
+
+    box-sizing: border-box;
+
+    display: inline-flex;
+    align-items: center;
+
+    width: calc(2 * var(--dim));
+    height: var(--dim);
+
+    background: var(--background-02);
+
+    cursor: pointer;
+
+    border-radius: calc(1.5 * var(--dim));
+
+    overflow: visible;
+}
+
+input[type="checkbox"].switch:before {
+    content: '';
+
+    display: block;
+
+    box-sizing: border-box;
+
+    transform: translate(0, 0);
+
+    background: var(--foreground-secondary);
+
+    --size: calc(1.15 * var(--dim));
+
+    width: var(--size);
+    height: var(--size);
+
+    overflow: hidden;
+
+    border-radius: var(--size);
+}
+
+input[type="checkbox"].switch:checked {
+    justify-content: flex-end;
+}
+
+input[type="checkbox"].switch:checked:before {
+    background: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+}

@@ -1,0 +1,60 @@
+on:
+  release:
+      types: [released, published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Rebuild app
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3.9.1
+      - name: install
+        run: npm install
+      - name: build
+        run: npm run build:prod
+      - uses: actions/upload-pages-artifact@3.0.1
+        with:
+          name: "github-pages"
+          path: "./build"
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-pages-artifact@3.0.1
+        with:
+          name: "github-pages"
+
+      - name: Create GitHub Release and upload build folder
+        uses: ncipollo/release-action@v1.20.0
+        with:
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            Automated release for tag ${{ github.ref_name }}.
+          assets: "./github-pages"
+
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

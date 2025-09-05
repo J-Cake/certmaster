@@ -1,0 +1,19 @@
+.tab-list {
+    display: flex;
+    flex-wrap: wrap;
+
+    padding: var(--spacing-s) 0 0 0;
+}
+
+.tab-list > * {
+    flex: 1;
+    max-width: var(--element-xs);
+
+    background: var(--background-02);
+    border: var(--border-dull);
+    border-color: var(--background-03);
+    border-bottom: none;
+    border-radius: var(--radius-m) var(--radius-m) 0 0;
+
+    padding: var(--spacing-s) var(--spacing-m);
+}

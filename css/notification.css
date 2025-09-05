@@ -1,0 +1,31 @@
+#notifications :is(dialog, div[popover]) {
+    position: fixed;
+
+    padding: var(--spacing-m) var(--spacing-xl) var(--spacing-m) var(--spacing-m);
+    margin: 0;
+    inset: unset;
+
+    bottom: var(--spacing-m);
+    left: var(--spacing-m);
+
+    min-width: var(--element-s);
+}
+
+#notifications :is(dialog, div[popover]) :is(h1, h2, h3, h4, h5, h6) {
+    margin: 0;
+    padding: 0;
+}
+
+#notifications :is(dialog, div[popover]) > .autoclose-progress {
+    content: '';
+
+    position: absolute;
+
+    bottom: 0;
+    left: 0;
+    width: 0;
+
+    height: var(--spacing-xxs);
+
+    background: var(--accent);
+}
