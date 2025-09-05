@@ -77,5 +77,5 @@ await esbuild.build({
 await Promise.all([
 	fs.copyFile('index.html', 'build/index.html'),
 	fs.copyFile('logo/logo.svg', 'build/logo.svg'),
-	// fs.copyFile('manifest.json', 'build/manifest.json'),
+	fs.copyFile('manifest.json', 'build/manifest.json'),
 ]);

@@ -1,0 +1,16 @@
+{
+	"lang": "en-au",
+	"name": "DNSMasq Frontend",
+	"short_name": "dnsmasq",
+	"description": "A GUI for DNSMasq",
+	"start_url": "/",
+	"background_color": "#2f3d58",
+	"theme_color": "#2f3d58",
+	"display": "standalone",
+	"icons": [
+		{
+			"src": "logo.svg",
+			"sizes": "500x500"
+		}
+	]
+}
