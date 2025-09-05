@@ -24,12 +24,6 @@ jobs:
           name: "github-pages"
           path: "./build"
 
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: "github-pages"
-          path: "./build"
-
       - name: GH Release
         uses: softprops/action-gh-release@v2.3.2
         with:
