@@ -20,28 +20,6 @@ jobs:
           name: "github-pages"
           path: "./build"
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-pages-artifact@3.0.1
-        with:
-          name: "github-pages"
-
-      - name: Create GitHub Release and upload build folder
-        uses: ncipollo/release-action@v1.20.0
-        with:
-          tag: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: |
-            Automated release for tag ${{ github.ref_name }}.
-          assets: "./github-pages"
-
   deploy:
     needs: build
 
