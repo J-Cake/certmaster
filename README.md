@@ -23,6 +23,16 @@ achieved in two ways:
 - Configure the app server to reverse-proxy the Docker API to a TCP socket. This repo includes a Caddy configuration
   which does this. [See it for examples](./Caddyfile).
 
+> **Note**: Docker explicitly advises against this for good reason. The Docker API is an extremely powerful API.
+> 
+> For this reason, I am working on an authenticated proxy for this and other similar applets I'm working on. I'm
+> planning on putting an OpenID-Connect authentication step between the network and the reverse proxy. This is the
+> intended purpose of the _Require Authentication_ checkmark in the connection dialogue. While it is not implemented
+> yet, it is a top priority. 
+>
+> In the meantime, please please please do your due dilligence of firewalling your API and protecting it properly if
+> you plan on using this app productively. 
+
 ### Running the app
 
 Since the application does not require a backend, you shouldn't need to run it yourself. But if you want to, you can
