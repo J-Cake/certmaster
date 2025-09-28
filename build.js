@@ -8,7 +8,7 @@ import * as esbuild from 'esbuild';
 const prod = process.env['NODE_ENV'] === 'production' || process.argv.includes('--prod');
 
 await esbuild.build({
-	entryPoints: ['src/main.tsx'],
+	entryPoints: ['app/main.tsx'],
 	bundle: true,
 	outdir: 'build',
 	sourcemap: !prod,
