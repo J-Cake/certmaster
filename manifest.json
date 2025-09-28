@@ -1,8 +1,8 @@
 {
 	"lang": "en-au",
-	"name": "DNSMasq Frontend",
-	"short_name": "dnsmasq",
-	"description": "A GUI for DNSMasq",
+	"name": "Certmaster",
+	"short_name": "certmaster",
+	"description": "A modular certificate authority for small environments",
 	"start_url": "/",
 	"background_color": "#2f3d58",
 	"theme_color": "#2f3d58",

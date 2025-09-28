@@ -1,5 +1,4 @@
 import * as tar from '@gera2ld/tarjs';
-import {ITarFileInfo} from "@gera2ld/tarjs";
 
 export type Archive = Awaited<ReturnType<typeof archive>>;
 export type ArchiveFile = Awaited<ReturnType<typeof configFile>>;

@@ -1,0 +1,23 @@
+name: 'Certmaster'
+
+services:
+  public:
+    image: caddy:latest
+    container_name: 'public'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+      - '12345:12345'
+      - '12345:12345/udp'
+    volumes:
+      - "./Caddyfile:/etc/caddy/Caddyfile"
+      - "./build:/var/www/html"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - local
+
+networks:
+  local:
+    driver: bridge

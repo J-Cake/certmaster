@@ -1,6 +1,7 @@
 #!/bin/env node
 
 import * as fs from 'node:fs/promises';
+import * as urllib from 'node:url';
 import * as pathlib from 'node:path';
 import * as esbuild from 'esbuild';
 
@@ -43,7 +44,7 @@ await esbuild.build({
 			});
 
 			build.onLoad({ filter: /.*/, namespace: 'svg' }, async args => ({
-				contents: `import xmlString from '${args.path}?raw';
+				contents: `import xmlString from '${urllib.pathToFileURL(args.path)}?raw';
 
 					const template = document.createElement('template');
 					template.innerHTML = xmlString;
@@ -53,13 +54,15 @@ await esbuild.build({
 			}))
 		}},
 		{name: 'raw', setup(build) {
-			build.onResolve({ filter: /\?raw$/ }, async args => ({
-				path: await fs.realpath(pathlib.join(args.resolveDir, args.path.slice(0, -4)), {
-					resolveDir: args.resolveDir,
-					followSymlinks: false,
-				}),
-				namespace: 'raw',
-			}));
+			build.onResolve({ filter: /\?raw$/ }, async args => {
+				return ({
+					path: await fs.realpath(urllib.fileURLToPath(args.path.slice(0, -4)), {
+						resolveDir: args.resolveDir,
+						followSymlinks: false,
+					}),
+					namespace: 'raw',
+				});
+			});
 
 			build.onLoad({ filter: /.*/, namespace: 'raw' }, async function (args) {
 				return {

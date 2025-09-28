@@ -1,8 +1,4 @@
-localhost:12345 {
-    handle_path /remote/* {
-        reverse_proxy http://192.168.2.50:2375
-    }
-
+localhost {
     handle_path /local/* {
         reverse_proxy unix//var/run/docker.sock
 
@@ -13,7 +9,7 @@ localhost:12345 {
     }
 
     handle {
-        root * ./build
+        root * /var/www/html
 
         try_files {path} /
 
