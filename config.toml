@@ -1,0 +1,10 @@
+[redis]
+url = "redis://redis:6375"
+channel = ""
+
+[receiver]
+#inbox = "/var/spool/certmaster-inbox"
+inbox = "/home/jcake/.local/certmaster-inbox"
+
+[runner]
+outbox = ""

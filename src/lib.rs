@@ -1,3 +1,5 @@
+mod convert;
+
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
@@ -12,15 +14,8 @@ pub struct Config {
 #[derive(Serialize, Deserialize)]
 pub struct RedisConfig {
     pub url: String,
-    pub channel: String,
-    pub password: Option<String>,
+    pub channel: Option<String>,
     pub db: Option<u32>,
-    pub tls: Option<bool>,
-    pub tls_verify: Option<bool>,
-    pub tls_ca_cert: Option<String>,
-    pub tls_cert: Option<String>,
-    pub tls_key: Option<String>,
-    pub tls_server_name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]

@@ -5,6 +5,7 @@ use config::Config;
 
 #[derive(clap::Parser)]
 pub struct Args {
+    #[clap(long, short, default_value = "./config.toml")]
     config: PathBuf
 }
 

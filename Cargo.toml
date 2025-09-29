@@ -1,5 +1,5 @@
 [package]
-name = "functions"
+name = "certmaster"
 version = "0.0.1"
 edition = "2024"
 
@@ -12,7 +12,7 @@ log = { version = "0.4.28" }
 clap = { version = "4.5.48", features = ["derive"] }
 tokio = { version = "1.47.1", features = ["full"] }
 redis = { version = "0.32.6", features = ["streams", "tokio-comp"] }
-notify = { version = "8.2.0", optional = true }
+notify = { version = "8.2.0", features = ["serde"] }
 toml = { version = "0.9.7" }
 serde = { version = "1.0.228", features = ["derive"] }
 
