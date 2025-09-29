@@ -9,12 +9,17 @@ services:
       - '80:80'
       - '443:443'
       - '443:443/udp'
-      - '12345:12345'
-      - '12345:12345/udp'
     volumes:
       - "./Caddyfile:/etc/caddy/Caddyfile"
       - "./build:/var/www/html"
       - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - local
+
+  ca:
+    image: debian:trixie-slim
+    container_name: 'ca'
+    restart: unless-stopped
     networks:
       - local
 

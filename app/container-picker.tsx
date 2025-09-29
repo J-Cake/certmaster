@@ -3,7 +3,6 @@ import DockerApi, {Container} from "./lib/api.js";
 import {topLevelModal} from "./modal.js";
 import ConnectContainerForm from "./connect-form.js";
 import uri from "urijs";
-import {Awaited, Interval} from "./util.js";
 
 export const currentContainer = React.createContext<Container | null>(null);
 
@@ -108,9 +107,7 @@ export default function ContainerPicker(props: { children: React.ReactNode }) {
 						signal: abort.signal
 					})) container.inspect()
 						.then(i => setContainerState(i.State.Status as string));
-				} catch (e) {
-					continue;
-				}
+				} catch (e) {}
 		})();
 
 		return () => abort.abort();
