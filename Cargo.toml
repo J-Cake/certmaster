@@ -14,6 +14,7 @@ tokio = { version = "1.47.1", features = ["full"] }
 redis = { version = "0.32.6", features = ["streams", "tokio-comp"] }
 notify = { version = "8.2.0", features = ["serde"] }
 toml = { version = "0.9.7" }
+ron = { version = "0.11.0" }
 serde = { version = "1.0.228", features = ["derive"] }
 
 [features]

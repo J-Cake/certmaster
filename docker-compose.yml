@@ -13,17 +13,17 @@ services:
       - "./Caddyfile:/etc/caddy/Caddyfile"
       - "./build:/var/www/html"
       - "/var/run/docker.sock:/var/run/docker.sock"
-    networks:
-      - certmaster
+#    networks:
+#      - certmaster
 
   redis:
     image: "redis:8.2-rc1-alpine3.22"
     container_name: 'certmaster-redis'
     restart: unless-stopped
     ports:
-      - '6379'
-    networks:
-      - certmaster
+      - "6379:6379"
+#    networks:
+#      - certmaster
 
   ca:
     build:
@@ -31,9 +31,9 @@ services:
       dockerfile: './ca.dockerfile'
     container_name: 'ca'
     restart: no
-    networks:
-      - certmaster
+#    networks:
+#      - certmaster
 
-networks:
-  certmaster:
-    driver: bridge
+#networks:
+#  certmaster:
+#    driver: bridge
