@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2024"
 
 [lib]
-name = "config"
+name = "common"
 
 [dependencies]
 env_logger = { version = "0.11.8" }
@@ -16,14 +16,15 @@ notify = { version = "8.2.0", features = ["serde"] }
 toml = { version = "0.9.7" }
 ron = { version = "0.11.0" }
 serde = { version = "1.0.228", features = ["derive"] }
+rune = { version = "0.14.1", features = ["tokio"] }
 
 [features]
 default = []
 
 [[bin]]
 name = "runner"
-path = "src/runner.rs"
+path = "src/bin/runner.rs"
 
 [[bin]]
 name = "receiver"
-path = "src/receiver.rs"
+path = "src/bin/receiver.rs"

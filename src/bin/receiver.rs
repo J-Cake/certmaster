@@ -1,13 +1,9 @@
-use std::mem::forget;
-use clap::Parser;
-use config::{debounce, Config};
-use config::Task;
+use common::{debounce, Job, REDIS_TASK_QUEUE_STREAM_GROUP};
+use common::read_config;
+use common::Task;
 use notify::Watcher;
 use redis::AsyncTypedCommands;
-use std::path::Path;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::OnceLock;
 use std::time::Duration;
 use std::time::SystemTime;
 use tokio::sync::mpsc;
@@ -20,8 +16,6 @@ pub struct Args {
     #[clap(long, short, default_value = "./config.toml")]
     config: PathBuf,
 }
-
-static CONFIG: OnceLock<Arc<Config>> = OnceLock::new();
 
 #[tokio::main]
 pub async fn main() {
@@ -42,10 +36,10 @@ pub async fn main() {
 
     let _req_tx = req_tx.clone();
     let __req_tx = req_tx.clone();
-    let initial = tokio::spawn(async move { read_inbox(_req_tx.clone()).await });
-    let fs_events = tokio::spawn(async move { handle_events(fs_rx, reindex_tx).await });
-    let dispatcher = tokio::spawn(async move { dispatch_to_redis(req_rx).await });
-    let reindex = tokio::spawn(async move { watch_reindex(reindex_rx, __req_tx).await });
+    let initial = tokio::spawn(read_inbox(_req_tx.clone()));
+    let fs_events = tokio::spawn(handle_events(fs_rx, reindex_tx));
+    let dispatcher = tokio::spawn(dispatch_to_redis(req_rx));
+    let reindex = tokio::spawn(watch_reindex(reindex_rx, __req_tx));
 
     watcher
         .watch(config.receiver.inbox.as_path(), notify::RecursiveMode::Recursive)
@@ -58,22 +52,8 @@ pub async fn main() {
     drop(watcher);
 }
 
-async fn read_config() -> Arc<Config> {
-    let args = Args::parse();
-
-    let config = tokio::fs::read_to_string(args.config)
-        .await
-        .expect("Failed to read config file");
-
-    let config = Arc::new(toml::from_str::<Config>(&config).expect("Failed to parse config file"));
-
-    CONFIG.set(config.clone()).expect("Failed to set config");
-
-    return config;
-}
-
 async fn init_watcher(fs_tx: mpsc::UnboundedSender<notify::Event>) -> impl Watcher {
-    let config = CONFIG.get().cloned().unwrap_or_default();
+    let config = common::get_config();
 
     tokio::fs::create_dir_all(config.receiver.inbox.as_path())
         .await
@@ -89,7 +69,7 @@ async fn init_watcher(fs_tx: mpsc::UnboundedSender<notify::Event>) -> impl Watch
 }
 
 async fn read_inbox(sender: mpsc::Sender<PathBuf>) {
-    let config = CONFIG.get().cloned().unwrap_or_default();
+    let config = common::get_config();
 
     let mut dir = tokio::fs::read_dir(config.receiver.inbox.as_path())
         .await
@@ -103,7 +83,8 @@ async fn read_inbox(sender: mpsc::Sender<PathBuf>) {
 }
 
 async fn watch_reindex(rx: mpsc::Receiver<()>, sender: mpsc::Sender<PathBuf>) {
-    let config = CONFIG.get().cloned().unwrap_or_default();
+    let config = common::get_config();
+
     let mut rx = debounce(rx, Duration::from_secs(config.receiver.rescan_interval));
     while let Some(_) = rx.recv().await {
         log::trace!("Reindexing");
@@ -128,13 +109,10 @@ async fn handle_events(mut rx: mpsc::UnboundedReceiver<notify::Event>, reindex: 
 }
 
 async fn dispatch_to_redis(mut rx: mpsc::Receiver<PathBuf>) {
-    let config = CONFIG.get().cloned().unwrap_or_default();
+    let config = common::get_config();
 
-    let mut redis = redis::Client::open(config.redis.url.as_ref())
-        .expect("Failed to connect to redis")
-        .get_multiplexed_async_connection()
-        .await
-        .expect("Failed to connect to redis");
+    let mut redis = config.redis.connect()
+        .await.expect("Could not connect to redis");
 
     while let Some(path) = rx.recv().await {
         log::trace!("Dispatching request: {path:?}");
@@ -149,12 +127,14 @@ async fn dispatch_to_redis(mut rx: mpsc::Receiver<PathBuf>) {
 
         let payload = ron::to_string(&Task {
             received: now,
-            path: str.to_owned(),
-            csr: contents,
+            job: Job::SignCsr {
+                path: str.to_owned(),
+                csr: contents
+            },
         })
         .expect("Failed to serialize task");
 
-        redis.rpush("task_queue", payload)
+        redis.xadd(&config.redis.task_stream_key, "*", &[(REDIS_TASK_QUEUE_STREAM_GROUP, payload)])
             .await.expect("Failed to dispatch request");
 
         tokio::fs::remove_file(&path).await.expect("Failed to remove request");
