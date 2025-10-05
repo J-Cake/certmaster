@@ -15,16 +15,14 @@ redis = { version = "0.32.6", features = ["streams", "tokio-comp"] }
 notify = { version = "8.2.0", features = ["serde"] }
 toml = { version = "0.9.7" }
 ron = { version = "0.11.0" }
+#serde_json = { version = "1.0.145" }
 serde = { version = "1.0.228", features = ["derive"] }
 rune = { version = "0.14.1", features = ["tokio"] }
+# rune-std = { version = "0.1.0", path = "../rune-std" }
 
 [features]
 default = []
 
 [[bin]]
-name = "runner"
-path = "src/bin/runner.rs"
-
-[[bin]]
 name = "receiver"
-path = "src/bin/receiver.rs"
+src = "./bin/receiver.rs"

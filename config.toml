@@ -10,4 +10,8 @@ rescan_interval = 2
 
 [runner]
 outbox = ""
-hooks = ["~/.local/on-csr.rn"]
+hooks = [
+    "~/.local/main.rn",
+    "~/.local/on-csr.rn"
+]
+workers = 4

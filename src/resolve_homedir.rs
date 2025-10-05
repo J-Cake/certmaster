@@ -2,7 +2,7 @@ use std::ffi::OsStr;
 use std::io;
 use std::path::*;
 
-pub async fn resolve(path: impl AsRef<Path>) -> io::Result<PathBuf> {
+pub async fn resolve_path(path: impl AsRef<Path>) -> io::Result<PathBuf> {
     let bits = path
         .as_ref()
         .components()

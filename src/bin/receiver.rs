@@ -1,5 +1,7 @@
-use common::{debounce, Job, REDIS_TASK_QUEUE_STREAM_GROUP};
+use common::debounce;
+use common::REDIS_TASK_QUEUE_STREAM_GROUP;
 use common::read_config;
+use common::Job;
 use common::Task;
 use notify::Watcher;
 use redis::AsyncTypedCommands;
@@ -9,27 +11,19 @@ use std::time::SystemTime;
 use tokio::sync::mpsc;
 
 /// # Receiver
-/// The receiver awaits directory changes and issues tasks according to the name of the item in the inbox.
-
-#[derive(clap::Parser)]
-pub struct Args {
-    #[clap(long, short, default_value = "./config.toml")]
-    config: PathBuf,
-}
+/// The receiver awaits directory changes and issues tasks to Redis according to the name of the item in the inbox.
 
 #[tokio::main]
 pub async fn main() {
     env_logger::init();
 
-    log::info!("Starting receiver");
+    log::info!("Starting inbox receiver");
 
     let config = read_config().await;
 
     let (req_tx, req_rx) = mpsc::channel(100);
     let (fs_tx, fs_rx) = mpsc::unbounded_channel();
-
     let (reindex_tx, reindex_rx) = mpsc::channel(100);
-
     let senders = (req_tx.clone(), fs_tx.clone(), reindex_tx.clone());
 
     let mut watcher = init_watcher(fs_tx).await;
@@ -52,7 +46,7 @@ pub async fn main() {
     drop(watcher);
 }
 
-async fn init_watcher(fs_tx: mpsc::UnboundedSender<notify::Event>) -> impl Watcher {
+pub(crate) async fn init_watcher(fs_tx: mpsc::UnboundedSender<notify::Event>) -> impl Watcher {
     let config = common::get_config();
 
     tokio::fs::create_dir_all(config.receiver.inbox.as_path())
@@ -68,7 +62,7 @@ async fn init_watcher(fs_tx: mpsc::UnboundedSender<notify::Event>) -> impl Watch
     .expect("Failed to watch inbox")
 }
 
-async fn read_inbox(sender: mpsc::Sender<PathBuf>) {
+pub(crate) async fn read_inbox(sender: mpsc::Sender<PathBuf>) {
     let config = common::get_config();
 
     let mut dir = tokio::fs::read_dir(config.receiver.inbox.as_path())
@@ -82,12 +76,12 @@ async fn read_inbox(sender: mpsc::Sender<PathBuf>) {
     }
 }
 
-async fn watch_reindex(rx: mpsc::Receiver<()>, sender: mpsc::Sender<PathBuf>) {
+pub(crate) async fn watch_reindex(rx: mpsc::Receiver<()>, sender: mpsc::Sender<PathBuf>) {
     let config = common::get_config();
 
     let mut rx = debounce(rx, Duration::from_secs(config.receiver.rescan_interval));
     while let Some(_) = rx.recv().await {
-        log::trace!("Reindexing");
+        log::trace!("Reindexing...");
 
         let sender = sender.clone();
         tokio::spawn(async move {
@@ -96,7 +90,7 @@ async fn watch_reindex(rx: mpsc::Receiver<()>, sender: mpsc::Sender<PathBuf>) {
     }
 }
 
-async fn handle_events(mut rx: mpsc::UnboundedReceiver<notify::Event>, reindex: mpsc::Sender<()>) {
+pub(crate) async fn handle_events(mut rx: mpsc::UnboundedReceiver<notify::Event>, reindex: mpsc::Sender<()>) {
     while let Some(event) = rx.recv().await {
         match &event.kind {
             notify::EventKind::Create(_) | notify::EventKind::Modify(_) => if let Err(_) = reindex.send(()).await {},
@@ -108,14 +102,13 @@ async fn handle_events(mut rx: mpsc::UnboundedReceiver<notify::Event>, reindex: 
     log::trace!("No more events");
 }
 
-async fn dispatch_to_redis(mut rx: mpsc::Receiver<PathBuf>) {
+pub(crate) async fn dispatch_to_redis(mut rx: mpsc::Receiver<PathBuf>) {
     let config = common::get_config();
 
-    let mut redis = config.redis.connect()
-        .await.expect("Could not connect to redis");
+    let mut redis = config.redis.connect().await;
 
     while let Some(path) = rx.recv().await {
-        log::trace!("Dispatching request: {path:?}");
+        log::info!("Received CSR: {path:?}");
 
         let Some(str) = path.to_str() else {
             log::warn!("Invalid request path: Contains non-UTF-8 characters - Skipping {path:?}");
