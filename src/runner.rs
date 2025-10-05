@@ -37,23 +37,25 @@ pub(crate) async fn handle_redis_events() {
             .await
             .expect("Failed to get redis stream reply");
 
-        for key in stream.keys.drain(..).flat_map(|i| i.ids) {
-            let Some(task) = key.map.get(REDIS_TASK_QUEUE_STREAM_GROUP)
+        for id in stream.keys.drain(..).flat_map(|k| k.ids) {
+            let Some(task) = id.map.get(REDIS_TASK_QUEUE_STREAM_GROUP)
                 .map(Task::from_redis_value)
                 .and_then(|i| i.ok()) else {
                 continue;
             };
 
-            if let Err(err) = call_hook(&task).await {
+            if let Err(err) = receive_task(&task).await {
                 log::error!("Error: {err:#?}");
             };
+
+            redis.xack::<_, _, _, Task>(&config.redis.task_stream_key, REDIS_TASK_QUEUE_STREAM_GROUP, &[id.id])
+                .await
+                .expect("Failed to acknowledge task");
         }
     }
 }
 
-async fn call_hook(task: &Task) -> io::Result<()> {
-    // let mut vm = RUNTIME.get().unwrap().vm();
-
+async fn receive_task(task: &Task) -> io::Result<()> {
     let result = match &task.job {
         Job::SignCsr { csr, path } => sign_csr(csr, path).await,
     };
@@ -66,6 +68,7 @@ async fn call_hook(task: &Task) -> io::Result<()> {
 }
 
 async fn sign_csr(csr: impl AsRef<str>, path: impl AsRef<Path>) -> io::Result<()> {
+    log::debug!("Signing csr: {csr:?}", csr=csr.as_ref());
 
     Ok(())
 }

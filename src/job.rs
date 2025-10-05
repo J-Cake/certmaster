@@ -11,8 +11,13 @@ pub struct Task {
 pub enum Job {
     SignCsr {
         path: String,
-        csr: PEMString
+        csr: CertificateSigningRequest
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CertificateSigningRequest {
+    csr: PEMString
 }
 
 pub type PEMString = String;
