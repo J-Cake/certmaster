@@ -3,72 +3,85 @@ use redis::streams::StreamReadReply;
 use redis::AsyncCommands;
 use redis::FromRedisValue;
 use redis::RedisResult;
-use std::io;
-use std::os::unix::fs::MetadataExt;
-use std::path::Path;
-use std::sync::Arc;
-use std::sync::OnceLock;
-use rune::Source;
-use rune::Unit;
-use common::Job;
-use common::Task;
-use common::REDIS_TASK_QUEUE_STREAM_GROUP;
+use common::NewCsr;
+use common::PendingChallenge;
+use common::NEW_CSR_EVENT_GROUP;
+use common::CHALLENGE_EVENT_GROUP;
+use common::CsrId;
+use common::Result;
+use common::RedisUtils;
 
-pub(crate) async fn handle_redis_events() {
-    let config = crate::get_config();
+pub(crate) async fn handle_redis_events() -> Result<()> {
+    let config = common::get_config();
     let mut redis = config
         .redis
         .connect()
         .await;
 
-    let consumer: u64 = redis.incr("runner", 1)
-        .await.expect("Unable to determine worker ID");
+    let consumer: u64 = redis.incr("new-csr-worker", 1)
+        .await?;
 
-    let _: RedisResult<Task> = redis.xgroup_create(&config.redis.task_stream_key, &REDIS_TASK_QUEUE_STREAM_GROUP, "0")
+    let _: RedisResult<NewCsr> = redis.xgroup_create(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
         .await;
 
     let options = StreamReadOptions::default()
         .block(0)
-        .group(REDIS_TASK_QUEUE_STREAM_GROUP, format!("worker-{consumer}"));
+        .group(NEW_CSR_EVENT_GROUP, format!("worker-{consumer}"));
 
     loop {
         let mut stream: StreamReadReply = redis
             .xread_options(&[&config.redis.task_stream_key], &[">"], &options)
-            .await
-            .expect("Failed to get redis stream reply");
+            .await?;
 
         for id in stream.keys.drain(..).flat_map(|k| k.ids) {
-            let Some(task) = id.map.get(REDIS_TASK_QUEUE_STREAM_GROUP)
-                .map(Task::from_redis_value)
-                .and_then(|i| i.ok()) else {
-                continue;
-            };
+            for (key, value) in id.map {
+                log::trace!("Received event '{key}'");
 
-            if let Err(err) = receive_task(&task).await {
-                log::error!("Error: {err:#?}");
-            };
+                match key.as_str() {
+                    NEW_CSR_EVENT_GROUP => new_csr(FromRedisValue::from_redis_value(&value)?).await?,
+                    CHALLENGE_EVENT_GROUP => challenge(FromRedisValue::from_redis_value(&value)?).await?,
+                    key => {
+                        log::warn!("Unknown job type {key} - skipping");
+                        continue;
+                    }
+                }
+            }
 
-            redis.xack::<_, _, _, Task>(&config.redis.task_stream_key, REDIS_TASK_QUEUE_STREAM_GROUP, &[id.id])
-                .await
-                .expect("Failed to acknowledge task");
+            redis.xack::<_, _, _, NewCsr>(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, &[id.id])
+                .await?;
         }
     }
 }
 
-async fn receive_task(task: &Task) -> io::Result<()> {
-    let result = match &task.job {
-        Job::SignCsr { csr, path } => sign_csr(csr, path).await,
-    };
+async fn new_csr(csr: NewCsr) -> Result<()> {
+    let config = common::get_config();
+    let mut redis = config
+        .redis
+        .connect()
+        .await;
 
-    if let Err(err) = result {
-        log::error!("Error: {err:#?}");
-    }
+    let csr_id: CsrId = redis.incr("csr_id", 1)
+        .await?;
+
+    log::trace!("Parsing CSR");
+
+    let params = rcgen::CertificateSigningRequestParams::from_pem(&csr.pem)?;
+
+    // TODO: Check whether all parameters are acceptable. If not fail the CSR. If acceptable, dispatch a challenge job.
+
+    log::debug!("{csr:#?}");
+
+    let _: () = redis.set(format!("csr:{csr_id}"), ron::to_string(&csr)?)
+        .await?;
+
+    redis.dispatch_event(PendingChallenge {
+        id: csr_id,
+    }).await?;
 
     Ok(())
 }
 
-async fn sign_csr(csr: impl AsRef<str>, path: impl AsRef<Path>) -> io::Result<()> {
-    log::debug!("Signing csr: {csr:?}", csr=csr.as_ref());
-
+async fn challenge(challenge: PendingChallenge) -> Result<()> {
+    log::trace!("Initiating Challenge {id}", id=challenge.id);
     Ok(())
 }

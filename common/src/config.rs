@@ -20,9 +20,7 @@ pub struct RedisConfig {
 }
 
 #[inline]
-fn task_queue_key_default() -> String { "task-queue".into() }
-#[inline]
-fn default_workers() -> u64 { 4 }
+fn task_queue_key_default() -> String { "event-queue".into() }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ReceiverConfig {
@@ -37,9 +35,7 @@ pub struct RunnerConfig {
 
     #[serde(default)]
     pub hooks: Vec<PathBuf>,
-    
-    #[serde(default = "default_workers")]
-    pub workers: u64
 }
 
-pub const REDIS_TASK_QUEUE_STREAM_GROUP: &'static str = "Task";
+pub const NEW_CSR_EVENT_GROUP: &str = "new-csr";
+pub const CHALLENGE_EVENT_GROUP: &str = "challenge";

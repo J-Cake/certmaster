@@ -1,8 +1,4 @@
-use serde::Deserialize;
-use serde::Serialize;
-use notify::Watcher;
 use std::path::PathBuf;
-use common::*;
 
 mod runner;
 
@@ -18,12 +14,13 @@ pub async fn main() {
 
     log::info!("starting up");
 
-    let config = read_config().await;
+    let config = common::read_config().await;
 
-    let mut workers = tokio::task::JoinSet::new();
-    for _ in 0..config.runner.workers {
-        workers.spawn(runner::handle_redis_events());
-    }
+    let worker = tokio::spawn(async move {
+        runner::handle_redis_events()
+            .await
+            .expect("Worker died");
+    });
 
-    let (..) = tokio::join!(workers.join_all());
+    let (..) = tokio::join!(worker);
 }

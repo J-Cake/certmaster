@@ -1,7 +1,7 @@
 [redis]
 url = "redis://localhost:6379"
 channel = ""
-task_queue_key = "task-queue"
+task_queue_key = "event-queue"
 
 [receiver]
 #inbox = "/var/spool/certmaster-inbox"
@@ -14,4 +14,3 @@ hooks = [
     "~/.local/main.rn",
     "~/.local/on-csr.rn"
 ]
-workers = 4

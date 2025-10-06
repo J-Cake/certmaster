@@ -3,9 +3,6 @@ name = "certmaster"
 version = "0.0.1"
 edition = "2024"
 
-[lib]
-name = "common"
-
 [dependencies]
 env_logger = { version = "0.11.8" }
 log = { version = "0.4.28" }
@@ -13,12 +10,9 @@ clap = { version = "4.5.48", features = ["derive"] }
 tokio = { version = "1.47.1", features = ["full"] }
 redis = { version = "0.32.6", features = ["streams", "tokio-comp"] }
 notify = { version = "8.2.0", features = ["serde"] }
-toml = { version = "0.9.7" }
 ron = { version = "0.11.0" }
-#serde_json = { version = "1.0.145" }
-serde = { version = "1.0.228", features = ["derive"] }
-rune = { version = "0.14.1", features = ["tokio"] }
-# rune-std = { version = "0.1.0", path = "../rune-std" }
+rcgen = { version = "0.14.5", features = ["x509-parser", "pem"] }
+common = { path = "./common" }
 
 [features]
 default = []
@@ -26,3 +20,6 @@ default = []
 [[bin]]
 name = "receiver"
 src = "./bin/receiver.rs"
+
+[workspace]
+members = ["common", "redis-derive"]

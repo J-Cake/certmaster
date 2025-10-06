@@ -1,13 +1,11 @@
+use common::{NewCsr, RedisUtils};
 use common::debounce;
-use common::REDIS_TASK_QUEUE_STREAM_GROUP;
+use common::NEW_CSR_EVENT_GROUP;
 use common::read_config;
-use common::Job;
-use common::Task;
 use notify::Watcher;
 use redis::AsyncTypedCommands;
 use std::path::PathBuf;
 use std::time::Duration;
-use std::time::SystemTime;
 use tokio::sync::mpsc;
 
 /// # Receiver
@@ -115,20 +113,18 @@ pub(crate) async fn dispatch_to_redis(mut rx: mpsc::Receiver<PathBuf>) {
             continue;
         };
 
-        let now = SystemTime::now();
-        let contents = tokio::fs::read_to_string(&path).await.expect("Failed to read request");
+        let pem = tokio::fs::read_to_string(&path).await.expect("Failed to read request");
 
-        let payload = ron::to_string(&Task {
-            received: now,
-            job: Job::SignCsr {
-                path: str.to_owned(),
-                csr: contents
-            },
-        })
-        .expect("Failed to serialize task");
-
-        redis.xadd(&config.redis.task_stream_key, "*", &[(REDIS_TASK_QUEUE_STREAM_GROUP, payload)])
+        redis.dispatch_event(NewCsr { pem })
             .await.expect("Failed to dispatch request");
+
+        // let payload = ron::to_string(&NewCsr {
+        //     pem
+        // })
+        // .expect("Failed to serialize task");
+        //
+        // redis.xadd(&config.redis.task_stream_key, "*", &[(NEW_CSR_EVENT_GROUP, payload)])
+        //     .await.expect("Failed to dispatch request");
 
         tokio::fs::remove_file(&path).await.expect("Failed to remove request");
     }
