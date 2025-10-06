@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use redis::aio::MultiplexedConnection;
-use redis::{AsyncCommands, FromRedisValue};
+use redis::{AsyncCommands, FromRedisValue, RedisError};
+use redis::streams::StreamAddOptions;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use crate::{NewCsr, RedisConfig, NEW_CSR_EVENT_GROUP};
@@ -21,8 +22,9 @@ impl RedisUtils for MultiplexedConnection {
 
         let payload = ron::to_string(&event)?;
 
-        self.xadd::<_, _, _, _, Event>(&config.redis.task_stream_key, "*", &[(NEW_CSR_EVENT_GROUP, payload)])
-            .await.expect("Failed to dispatch request");
+        let _: () = self.xadd(&config.redis.task_stream_key, "*", &[(NEW_CSR_EVENT_GROUP, payload)])
+            .await
+            .map_err(RedisError::from)?;
 
         Ok(())
     }
