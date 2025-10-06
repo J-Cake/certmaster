@@ -1,0 +1,16 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+log = { version = "0.4.28" }
+clap = { version = "4.5.48", features = ["derive"] }
+tokio = { version = "1.47.1", features = ["full"] }
+redis = { version = "0.32.6", features = ["streams", "tokio-comp"] }
+toml = { version = "0.9.7" }
+ron = { version = "0.11.0" }
+serde = { version = "1.0.228", features = ["derive"] }
+rune = { version = "0.14.1", features = ["tokio"] }
+redis-derive = { path = "../redis-derive" }
+async-trait = "0.1.89"
