@@ -1,0 +1,12 @@
+{
+    auto_https off
+}
+
+localhost:9999 {
+    tls ./service.crt ./service.key
+
+    file_server {
+        root ./
+        browse
+    }
+}

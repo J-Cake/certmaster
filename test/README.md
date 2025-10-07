@@ -20,33 +20,7 @@ authority in a transaction called a *Certificate Signing Request*. Since the aut
 information, it expects information in a standard format called *X.509*. We can generate X.509 signing requests using
 OpenSSL and a file format containing the information to pass along with the public key.
 
-```ini
-[req]
-default_keyfile    = service.key
-prompt             = no
-encrypt_key        = no
-default_md         = sha256
-distinguished_name = dn
-req_extensions     = req_ext
-
-[dn]
-C            = DE
-ST           = Baden-Württemberg
-L            = Tübingen
-O            = JSchneiderProjects
-OU           = IT Department
-CN           = service.local
-emailAddress = not.my@email.address
-
-[req_ext]
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = service
-DNS.2 = service.local
-IP.1  = 127.0.0.1
-IP.2  = 192.168.0.1
-```
+[See ./service.conf](./service.conf)
 
 ## Generate the X.509 CSR
 
@@ -69,10 +43,15 @@ of two ways:
    in a well-known trust store, through explicit allow-lists or other mechanisms. Authorities whose certificates
    implicitly trusted are referred to as *Root CAs* because they represent the end of a chain.
 
-This is how you generate a self-signed certificate using OpenSSL:
+This is how you generate a self-signed certificate using OpenSSL. It also uses a configuration file because that allows
+us to specify various options that are required to make browsers and other clients accept the certificates. You can find
+it [under ./authority.conf](./authority.conf).
 
 ```shell
-openssl req -x509 -new -key authority.key -days 3650 -subj "/CN=Certmaster Example Authority" -out authority.crt
+openssl req -x509 -key authority.key \
+  -out authority.crt \
+  -config authority -extensions ca_ext \
+  -days 3650 -sha256
 ```
 
 ## Generate the certificate for the service
@@ -99,16 +78,24 @@ In this example we'll assume that the challenge already passed and skip to actua
 
 ```shell
 CA_SERIAL=1000 # This is the certificate's serial number. It is used to identify and potentially revoke the certificate.
-openssl x509 -req -in service.csr -CA authority.crt -CAkey authority.key -set_serial "$CA_SERIAL" -days 365 -out service.crt
+openssl x509 -req -in service.csr \
+  -CA authority.crt -CAkey authority.key \
+  -set_serial "1000" \
+  -days 365 -sha256 \
+  -out service.crt
 ```
 
 Usually just signing the certificate isn't enough to make browsers and other validating agents accept it, because it
 lacks information they are expecting. This can be obtained from the CA's own certificate or through an additional
-[config file](./openssl.conf).
+[config file](authority.conf).
 
 ```shell
-openssl x509 -req -in service.csr -CA authority.crt -CAkey authority.key -set_serial "$CA_SERIAL" -days 365 -out service.crt \
-  -extfile openssl.conf -extensions req_ext # This line causes OpenSSL to read from the configuration file.  
+openssl x509 -req -in service.csr \
+  -CA authority.crt -CAkey authority.key \
+  -set_serial "1000" \
+  -days 365 -sha256 \
+  -out service.crt \
+  -extfile authority.conf -extensions usr_cert # This line causes OpenSSL to read from the configuration file.
 ```
 
 The resulting `./service.crt` file is the signed certificate that can be returned to the client.
