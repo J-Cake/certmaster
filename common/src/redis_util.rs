@@ -22,9 +22,8 @@ impl RedisUtils for MultiplexedConnection {
 
         let payload = ron::to_string(&event)?;
 
-        let _: () = self.xadd(&config.redis.task_stream_key, "*", &[(NEW_CSR_EVENT_GROUP, payload)])
-            .await
-            .map_err(RedisError::from)?;
+        let _: () = self.xadd(&config.redis.task_stream_key, "*", &[(Event::event_name(), payload)])
+            .await?;
 
         Ok(())
     }

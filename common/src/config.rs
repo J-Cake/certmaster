@@ -36,6 +36,3 @@ pub struct RunnerConfig {
     #[serde(default)]
     pub hooks: Vec<PathBuf>,
 }
-
-pub const NEW_CSR_EVENT_GROUP: &str = "new-csr";
-pub const CHALLENGE_EVENT_GROUP: &str = "challenge";

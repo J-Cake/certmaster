@@ -1,12 +1,14 @@
+use std::io;
 use redis::streams::StreamReadOptions;
 use redis::streams::StreamReadReply;
 use redis::AsyncCommands;
 use redis::FromRedisValue;
 use redis::RedisResult;
-use common::NewCsr;
+use common::{ChallengeResult, Csr, NewCsr};
 use common::PendingChallenge;
 use common::NEW_CSR_EVENT_GROUP;
 use common::CHALLENGE_EVENT_GROUP;
+use common::CHALLENGE_RESULT_EVENT_GROUP;
 use common::CsrId;
 use common::Result;
 use common::RedisUtils;
@@ -40,6 +42,7 @@ pub(crate) async fn handle_redis_events() -> Result<()> {
                 match key.as_str() {
                     NEW_CSR_EVENT_GROUP => new_csr(FromRedisValue::from_redis_value(&value)?).await?,
                     CHALLENGE_EVENT_GROUP => challenge(FromRedisValue::from_redis_value(&value)?).await?,
+                    CHALLENGE_RESULT_EVENT_GROUP => challenge_result(FromRedisValue::from_redis_value(&value)?).await?,
                     key => {
                         log::warn!("Unknown job type {key} - skipping");
                         continue;
@@ -47,8 +50,9 @@ pub(crate) async fn handle_redis_events() -> Result<()> {
                 }
             }
 
-            redis.xack::<_, _, _, NewCsr>(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, &[id.id])
+            let _: () = redis.xack(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, &[id.id])
                 .await?;
+
         }
     }
 }
@@ -71,7 +75,7 @@ async fn new_csr(csr: NewCsr) -> Result<()> {
 
     log::debug!("{csr:#?}");
 
-    let _: () = redis.set(format!("csr:{csr_id}"), ron::to_string(&csr)?)
+    let _: () = redis.set(format!("csr:{csr_id}"), ron::to_string(&Csr::from(csr))?)
         .await?;
 
     redis.dispatch_event(PendingChallenge {
@@ -83,5 +87,29 @@ async fn new_csr(csr: NewCsr) -> Result<()> {
 
 async fn challenge(challenge: PendingChallenge) -> Result<()> {
     log::trace!("Initiating Challenge {id}", id=challenge.id);
+
     Ok(())
+}
+
+async fn challenge_result(challenge: ChallengeResult) -> Result<()> {
+    let config = common::get_config();
+    let mut redis = config
+        .redis
+        .connect()
+        .await;
+
+    let csr: Csr = redis.get(format!("csr:{id}", id=challenge.id)).await?;
+
+    
+
+    match challenge {
+        ChallengeResult { success: false, id } => {
+            Err(io::Error::other(format!("Challenge for {id} did not pass.")).into())
+        },
+        ChallengeResult { success: true, id } => {
+            log::info!("Challenge {id} passed");
+
+            Ok(())
+        },
+    }
 }
