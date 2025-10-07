@@ -6,11 +6,11 @@ use redis::AsyncCommands;
 use redis::FromRedisValue;
 use redis::RedisResult;
 use ron::to_string;
-use common::{ChallengeResult, JobStatus, Config, Csr, NewCsr};
+use common::{JobProgress, JobStatus, Config, Csr, NewCsr, Completion};
 use common::PendingChallenge;
 use common::NEW_CSR_EVENT_GROUP;
 use common::CHALLENGE_EVENT_GROUP;
-use common::CHALLENGE_RESULT_EVENT_GROUP;
+use common::JOB_PROGRESS_EVENT_GROUP;
 use common::CsrId;
 use common::Result;
 use common::RedisUtils;
@@ -44,7 +44,7 @@ pub(crate) async fn handle_redis_events() -> Result<()> {
                 match key.as_str() {
                     NEW_CSR_EVENT_GROUP => new_csr(FromRedisValue::from_redis_value(&value)?).await?,
                     CHALLENGE_EVENT_GROUP => challenge(FromRedisValue::from_redis_value(&value)?).await?,
-                    CHALLENGE_RESULT_EVENT_GROUP => challenge_result(FromRedisValue::from_redis_value(&value)?).await?,
+                    JOB_PROGRESS_EVENT_GROUP => job_progress(FromRedisValue::from_redis_value(&value)?).await?,
                     key => {
                         log::warn!("Unknown job type {key} - skipping");
                         continue;
@@ -97,44 +97,46 @@ async fn challenge(challenge: PendingChallenge) -> Result<()> {
     log::trace!("Initiating Challenge {id}", id=challenge.id);
     let csr: Csr = redis.get(format!("csr:{id}", id=challenge.id)).await?;
 
-    if let 
-        JobStatus::ChallengePassed | 
-        JobStatus::ChallengeFailed { .. } | 
-        JobStatus::Finished | 
-        JobStatus::SigningError { .. } = csr.status {
-        return Err(io::Error::other("Request has already been processed.").into());
+    match csr.status {
+        JobStatus::Pending => {},
+        _ => return Err(io::Error::other("Request has already been processed.").into())
     }
 
     Ok(())
 }
 
-async fn challenge_result(challenge: ChallengeResult) -> Result<()> {
+async fn job_progress(update: JobProgress) -> Result<()> {
     let config = common::get_config();
     let mut redis = config
         .redis
         .connect()
         .await;
 
-    let redis_key = format!("csr:{id}", id=challenge.id);
-    let csr: Csr = redis.get(&redis_key).await?;
+    let redis_key = format!("csr:{id}", id=update.id);
+    let mut csr: Csr = redis.get(&redis_key).await?;
 
-    match challenge {
-        ChallengeResult { success: false, id } => {
-            Err(io::Error::other(format!("Challenge for {id} did not pass.")).into())
+    csr.status = match update.status {
+        JobStatus::Pending | JobStatus::ChallengePending if csr.status != update.status => {
+            log::warn!("Job {id} was changed to {status:?}. Changing a job back to pending can leave it in a non-recoverable state.", id=update.id, status=update.status);
+            update.status
         },
-        ChallengeResult { success: true, id } => {
-            log::info!("Challenge {id} passed");
-
-            let Ok(cert) = ('crt: {
+        JobStatus::ChallengePassed => {
+            log::info!("Challenge {id} passed", id=update.id);
+            let signing = ('crt: {
                 let issuer = match get_issuer(&config).await {
                     Ok(issuer) => issuer,
                     Err(err) => break 'crt Err(err),
                 };
 
                 let params = match rcgen::CertificateSigningRequestParams::from_pem(csr.pem()) {
-                    Ok(params) => params,
+                    Ok(mut params) => {
+                        params.params.serial_number.replace(update.id.into());
+                        params
+                    },
                     Err(err) => break 'crt Err(err.into()),
                 };
+
+                log::info!("Signing certificate for {cn:?}", cn=params.params.subject_alt_names);
 
                 let result = match params.signed_by(&issuer) {
                     Ok(result) => result,
@@ -142,21 +144,60 @@ async fn challenge_result(challenge: ChallengeResult) -> Result<()> {
                 };
 
                 Ok(result)
-            }) else {
-                return Err(io::Error::other("Signing certificate failed").into())
+            });
+
+            let new_status = match signing {
+                Ok(cert) => {
+                    log::info!("Certificate for client signed.");
+                    redis.dispatch_event(Completion {
+                        id: update.id,
+                        certificate: cert.pem()
+                    }).await?;
+                    JobStatus::Finished
+                },
+                Err(err) => {
+                    log::error!("{err:?}");
+                    JobStatus::SigningError {
+                        reason: err.to_string(),
+                    }
+                }
             };
 
-            let mut csr = csr;
+            redis.dispatch_event(JobProgress {
+                id: update.id,
+                status: new_status.clone(),
+            }).await?;
 
-            redis.set(format!("csr:{id}"), ron::to_string()?).await?;
-            log::info!("Certificate for client signed.");
-
-            Ok(())
+            new_status
         },
-    }
+        status => status
+    };
+
+    let _: () = redis.set(redis_key, ron::to_string(&csr)?).await?;
+
+    Ok(())
 }
 
-async fn get_issuer(config: &Config) -> Result<rcgen::Issuer<impl SigningKey>> {
+async fn completion(completion: Completion) -> Result<()> {
+    let config = common::get_config();
+    let mut redis = config
+        .redis
+        .connect()
+        .await;
+
+    let csr_key = format!("csr:{id}", id=completion.id);
+    let cert_key = format!("cert:{id}", id=completion.id);
+    let mut csr: Csr = redis.get(&csr_key).await?;
+
+    csr.status = JobStatus::Stale;
+
+    redis.set(cert_key, ron::to_string(&completion)?).await?;
+    redis.set(csr_key, ron::to_string(&csr)?).await?;
+
+    Ok(())
+}
+
+async fn get_issuer(config: &Config) -> Result<rcgen::Issuer<'_, impl SigningKey>> {
     let cert = tokio::fs::read_to_string(&config.ca.certificate).await?;
     let key = tokio::fs::read_to_string(&config.ca.key).await?;
 

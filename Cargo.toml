@@ -11,7 +11,7 @@ tokio = { version = "1.47.1", features = ["full"] }
 redis = { version = "0.32.6", features = ["streams", "tokio-comp"] }
 notify = { version = "8.2.0", features = ["serde"] }
 ron = { version = "0.11.0" }
-rcgen = { version = "0.14.5", features = ["x509-parser", "pem"] }
+rcgen = { version = "0.14.5", features = ["x509-parser", "pem", "aws_lc_rs"] }
 common = { path = "./common" }
 
 [features]
