@@ -2,11 +2,12 @@
     auto_https off
 }
 
-localhost:9999 {
-    tls ./service.crt ./service.key
+
+google.com, www.google.com {
+    tls /var/www/html/service.crt /var/www/html/service.key
 
     file_server {
-        root ./
+        root /var/www/html
         browse
     }
 }

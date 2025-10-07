@@ -82,6 +82,7 @@ openssl x509 -req -in service.csr \
   -CA authority.crt -CAkey authority.key \
   -set_serial "1000" \
   -days 365 -sha256 \
+  -copy_extensions copy \
   -out service.crt
 ```
 
@@ -94,6 +95,7 @@ openssl x509 -req -in service.csr \
   -CA authority.crt -CAkey authority.key \
   -set_serial "1000" \
   -days 365 -sha256 \
+  -copy_extensions copy \
   -out service.crt \
   -extfile authority.conf -extensions usr_cert # This line causes OpenSSL to read from the configuration file.
 ```
