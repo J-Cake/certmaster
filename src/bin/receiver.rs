@@ -5,11 +5,14 @@ use common::read_config;
 use notify::Watcher;
 use redis::AsyncTypedCommands;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicU64;
 use std::time::Duration;
 use tokio::sync::mpsc;
 
 /// # Receiver
 /// The receiver awaits directory changes and issues tasks to Redis according to the name of the item in the inbox.
+
+static SEQ: AtomicU64 = AtomicU64::new(0);
 
 #[tokio::main]
 pub async fn main() {
@@ -115,7 +118,10 @@ pub(crate) async fn dispatch_to_redis(mut rx: mpsc::Receiver<PathBuf>) {
 
         let pem = tokio::fs::read_to_string(&path).await.expect("Failed to read request");
 
-        redis.dispatch_event(NewCsr { pem })
+        redis.dispatch_event(NewCsr {
+            pem,
+            client_id: SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
+        })
             .await.expect("Failed to dispatch request");
 
         // let payload = ron::to_string(&NewCsr {

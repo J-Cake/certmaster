@@ -13,4 +13,6 @@ ron = { version = "0.11.0" }
 serde = { version = "1.0.228", features = ["derive"] }
 rune = { version = "0.14.1", features = ["tokio"] }
 redis-derive = { path = "../redis-derive" }
-async-trait = "0.1.89"
+async-trait = { version = "0.1.89" }
+backtrace = { version = "0.3.76" }
+rcgen = "0.14.5"

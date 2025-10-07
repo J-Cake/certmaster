@@ -1,4 +1,6 @@
 use std::io;
+use std::sync::{Arc, LazyLock};
+use base64::Engine;
 use rcgen::{CertificateSigningRequest, Issuer, KeyPair, SigningKey};
 use redis::streams::StreamReadOptions;
 use redis::streams::StreamReadReply;
@@ -6,7 +8,7 @@ use redis::AsyncCommands;
 use redis::FromRedisValue;
 use redis::RedisResult;
 use ron::to_string;
-use common::{JobProgress, JobStatus, Config, Csr, NewCsr, Completion};
+use common::{JobProgress, JobStatus, Config, Csr, NewCsr, Completion, AltName};
 use common::PendingChallenge;
 use common::NEW_CSR_EVENT_GROUP;
 use common::CHALLENGE_EVENT_GROUP;
@@ -14,6 +16,9 @@ use common::JOB_PROGRESS_EVENT_GROUP;
 use common::CsrId;
 use common::Result;
 use common::RedisUtils;
+use once_cell::unsync::Lazy;
+
+static BASE64_ENGINE: LazyLock<base64::engine::GeneralPurpose> = LazyLock::new(|| base64::engine::GeneralPurpose::new(&base64::alphabet::STANDARD, Default::default()));
 
 pub(crate) async fn handle_redis_events() -> Result<()> {
     let config = common::get_config();
@@ -77,7 +82,15 @@ async fn new_csr(csr: NewCsr) -> Result<()> {
 
     log::debug!("{csr:#?}");
 
-    let _: () = redis.set(format!("csr:{csr_id}"), ron::to_string(&Csr::from(csr))?)
+    let _: () = redis.set(format!("csr:{csr_id}"), ron::to_string(&Csr::from(csr.clone()))?)
+        .await?;
+
+    let alt = blake3::hash(format!("{id};{pem}", id=csr.client_id, pem=csr.pem).as_bytes());
+    let alt = BASE64_ENGINE.encode(alt.as_bytes());
+    let _: () = redis.set(format!("alt:{alt}"), ron::to_string(&AltName {
+        client_id: csr.client_id,
+        alias: csr_id,
+    })?)
         .await?;
 
     redis.dispatch_event(PendingChallenge {
@@ -191,8 +204,8 @@ async fn completion(completion: Completion) -> Result<()> {
 
     csr.status = JobStatus::Stale;
 
-    redis.set(cert_key, ron::to_string(&completion)?).await?;
-    redis.set(csr_key, ron::to_string(&csr)?).await?;
+    let _: () = redis.set(cert_key, ron::to_string(&completion)?).await?;
+    let _: () = redis.set(csr_key, ron::to_string(&csr)?).await?;
 
     Ok(())
 }

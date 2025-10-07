@@ -1,17 +1,23 @@
 #![feature(str_as_str)]
 
-use common::{JobProgress, NewCsr};
+use common::{Error, JobProgress, NewCsr};
 use common::JobStatus;
 use common::RedisUtils;
 use common::Result;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicU64;
+use std::sync::LazyLock;
+use base64::Engine;
 use tokio::io::AsyncBufReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::io::BufReader;
 use tokio::io::BufWriter;
 
 const EMPTY: String = String::new();
+
+static SEQ: AtomicU64 = AtomicU64::new(0);
+static BASE64_ENGINE: LazyLock<base64::engine::GeneralPurpose> = LazyLock::new(|| base64::engine::GeneralPurpose::new(&base64::alphabet::STANDARD, Default::default()));
 
 #[tokio::main]
 pub async fn main() -> Result<()> {
@@ -72,7 +78,7 @@ async fn handle_challenge(mut args: impl Iterator<Item = impl AsRef<str>>) -> Re
 
             ""
         }
-        _ => return Err("Invalid Syntax".into()),
+        _ => return Error::custom("Invalid Syntax"),
     }
     .to_owned())
 }
@@ -86,16 +92,23 @@ async fn handle_request(mut args: impl Iterator<Item = impl AsRef<str>>) -> Resu
         Some("submit") => {
             for path in args.map(|i| PathBuf::from(i.as_ref())) {
                 let pem = tokio::fs::read_to_string(&path).await?;
+                let client_id = SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 redis
-                    .dispatch_event(NewCsr { pem })
+                    .dispatch_event(NewCsr {
+                        client_id,
+                        pem: pem.clone()
+                    })
                     .await?;
 
-                log::info!("Submitted challenge {path:?}");
+                let alt = blake3::hash(format!("{id};{pem}", id=client_id).as_bytes());
+                let alt = BASE64_ENGINE.encode(alt.as_bytes());
+
+                log::info!("Submitted CSR {path:?} using ID '{alt}'");
             }
 
             ""
         },
-        _ => return Err("Invalid Syntax".into()),
+        _ => return Error::custom("Invalid Syntax"),
     }
     .to_owned())
 }
