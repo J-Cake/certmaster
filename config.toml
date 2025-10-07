@@ -8,9 +8,12 @@ task_queue_key = "event-queue"
 inbox = "/home/jcake/.local/certmaster-inbox"
 rescan_interval = 2
 
-[runner]
+[ca]
 outbox = ""
 hooks = [
     "~/.local/main.rn",
     "~/.local/on-csr.rn"
 ]
+
+certificate = "./test/authority.crt"
+key = "./test/authority.key"

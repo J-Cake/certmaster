@@ -6,7 +6,7 @@ pub struct Config {
     pub redis: RedisConfig,
 
     pub receiver: ReceiverConfig,
-    pub runner: RunnerConfig
+    pub ca: CaConfig
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -30,9 +30,12 @@ pub struct ReceiverConfig {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct RunnerConfig {
+pub struct CaConfig {
     pub outbox: PathBuf,
 
     #[serde(default)]
     pub hooks: Vec<PathBuf>,
+
+    pub certificate: PathBuf,
+    pub key: PathBuf
 }

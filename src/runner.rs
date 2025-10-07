@@ -1,10 +1,12 @@
 use std::io;
+use rcgen::{CertificateSigningRequest, Issuer, KeyPair, SigningKey};
 use redis::streams::StreamReadOptions;
 use redis::streams::StreamReadReply;
 use redis::AsyncCommands;
 use redis::FromRedisValue;
 use redis::RedisResult;
-use common::{ChallengeResult, Csr, NewCsr};
+use ron::to_string;
+use common::{ChallengeResult, JobStatus, Config, Csr, NewCsr};
 use common::PendingChallenge;
 use common::NEW_CSR_EVENT_GROUP;
 use common::CHALLENGE_EVENT_GROUP;
@@ -86,7 +88,22 @@ async fn new_csr(csr: NewCsr) -> Result<()> {
 }
 
 async fn challenge(challenge: PendingChallenge) -> Result<()> {
+    let config = common::get_config();
+    let mut redis = config
+        .redis
+        .connect()
+        .await;
+
     log::trace!("Initiating Challenge {id}", id=challenge.id);
+    let csr: Csr = redis.get(format!("csr:{id}", id=challenge.id)).await?;
+
+    if let 
+        JobStatus::ChallengePassed | 
+        JobStatus::ChallengeFailed { .. } | 
+        JobStatus::Finished | 
+        JobStatus::SigningError { .. } = csr.status {
+        return Err(io::Error::other("Request has already been processed.").into());
+    }
 
     Ok(())
 }
@@ -98,9 +115,8 @@ async fn challenge_result(challenge: ChallengeResult) -> Result<()> {
         .connect()
         .await;
 
-    let csr: Csr = redis.get(format!("csr:{id}", id=challenge.id)).await?;
-
-    
+    let redis_key = format!("csr:{id}", id=challenge.id);
+    let csr: Csr = redis.get(&redis_key).await?;
 
     match challenge {
         ChallengeResult { success: false, id } => {
@@ -109,7 +125,42 @@ async fn challenge_result(challenge: ChallengeResult) -> Result<()> {
         ChallengeResult { success: true, id } => {
             log::info!("Challenge {id} passed");
 
+            let Ok(cert) = ('crt: {
+                let issuer = match get_issuer(&config).await {
+                    Ok(issuer) => issuer,
+                    Err(err) => break 'crt Err(err),
+                };
+
+                let params = match rcgen::CertificateSigningRequestParams::from_pem(csr.pem()) {
+                    Ok(params) => params,
+                    Err(err) => break 'crt Err(err.into()),
+                };
+
+                let result = match params.signed_by(&issuer) {
+                    Ok(result) => result,
+                    Err(err) => break 'crt Err(err.into()),
+                };
+
+                Ok(result)
+            }) else {
+                return Err(io::Error::other("Signing certificate failed").into())
+            };
+
+            let mut csr = csr;
+
+            redis.set(format!("csr:{id}"), ron::to_string()?).await?;
+            log::info!("Certificate for client signed.");
+
             Ok(())
         },
     }
+}
+
+async fn get_issuer(config: &Config) -> Result<rcgen::Issuer<impl SigningKey>> {
+    let cert = tokio::fs::read_to_string(&config.ca.certificate).await?;
+    let key = tokio::fs::read_to_string(&config.ca.key).await?;
+
+    let key = KeyPair::from_pem(&key)?;
+
+    Ok(Issuer::from_ca_cert_pem(&cert, key)?)
 }

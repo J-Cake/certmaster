@@ -18,7 +18,7 @@ impl Runner {
     async fn create_rn_context(config: &Config) -> io::Result<rune::Vm> {
         let mut sources = rune::Sources::new();
 
-        for hook in config.runner.hooks.iter() {
+        for hook in config.ca.hooks.iter() {
             let hook = crate::resolve_path(hook)
                 .await?;
 

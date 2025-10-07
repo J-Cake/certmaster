@@ -47,14 +47,20 @@ pub type CsrId = u64;
 #[derive(Debug, FromRedisValue, Serialize, Deserialize)]
 pub struct Csr {
     pub(crate) pem: PEMString,
-    pub status: ChallengeStatus
+    pub status: JobStatus
+}
+
+impl Csr {
+    pub fn pem(&self) -> &PEMString {
+        &self.pem
+    }
 }
 
 impl From<NewCsr> for Csr {
     fn from(csr: NewCsr) -> Csr {
         Csr {
             pem: csr.pem,
-            status: ChallengeStatus::Pending
+            status: JobStatus::Pending
         }
     }
 }
@@ -63,16 +69,20 @@ impl From<PEMString> for Csr {
     fn from(value: PEMString) -> Self {
         Self {
             pem: value,
-            status: ChallengeStatus::Pending
+            status: JobStatus::Pending
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ChallengeStatus {
+pub enum JobStatus {
     Pending,
-    Success,
-    Failure {
+    ChallengePassed,
+    ChallengeFailed {
+        reason: String
+    },
+    Finished,
+    SigningError {
         reason: String
     }
 }
