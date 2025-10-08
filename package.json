@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "build": "node ./build.js",
-        "build:prod": "node ./build.js --prod",
+        "build:release": "node ./build.js --prod",
         "serve": "caddy run -c Caddyfile"
     },
     "dependencies": {
