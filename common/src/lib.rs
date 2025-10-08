@@ -9,6 +9,8 @@ mod redis_util;
 mod error;
 
 use std::fmt::{Debug, Display, Formatter};
+use std::sync::LazyLock;
+use base64::Engine;
 use serde::Serialize;
 pub use config::*;
 pub use args::*;
@@ -18,3 +20,19 @@ pub use debounce::*;
 pub use redis_util::*;
 
 pub use error::*;
+
+pub use blake3;
+
+static BASE64_ENGINE: LazyLock<base64::engine::GeneralPurpose> = LazyLock::new(|| base64::engine::GeneralPurpose::new(&base64::alphabet::STANDARD, Default::default()));
+
+pub fn encode_base64(bin: impl AsRef<[u8]>) -> String {
+    BASE64_ENGINE.encode(bin.as_ref())
+}
+
+pub fn decode_base64(str: impl AsRef<str>) -> Result<Vec<u8>> {
+    Ok(BASE64_ENGINE.decode(str.as_ref())?)
+}
+
+pub fn get_alt_name(client_id: u64, pem: &PEMString) -> String {
+    encode_base64(blake3::hash(format!("{client_id};{pem}").as_bytes()).as_bytes())
+}

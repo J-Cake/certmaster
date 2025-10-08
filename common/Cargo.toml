@@ -16,3 +16,5 @@ redis-derive = { path = "../redis-derive" }
 async-trait = { version = "0.1.89" }
 backtrace = { version = "0.3.76" }
 rcgen = "0.14.5"
+blake3 = "1.8.2"
+base64 = "0.22.1"

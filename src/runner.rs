@@ -1,24 +1,20 @@
-use std::io;
-use std::sync::{Arc, LazyLock};
-use base64::Engine;
-use rcgen::{CertificateSigningRequest, Issuer, KeyPair, SigningKey};
-use redis::streams::StreamReadOptions;
-use redis::streams::StreamReadReply;
-use redis::AsyncCommands;
-use redis::FromRedisValue;
-use redis::RedisResult;
-use ron::to_string;
-use common::{JobProgress, JobStatus, Config, Csr, NewCsr, Completion, AltName};
-use common::PendingChallenge;
-use common::NEW_CSR_EVENT_GROUP;
-use common::CHALLENGE_EVENT_GROUP;
-use common::JOB_PROGRESS_EVENT_GROUP;
-use common::CsrId;
-use common::Result;
-use common::RedisUtils;
-use once_cell::unsync::Lazy;
-
-static BASE64_ENGINE: LazyLock<base64::engine::GeneralPurpose> = LazyLock::new(|| base64::engine::GeneralPurpose::new(&base64::alphabet::STANDARD, Default::default()));
+use std::{
+    io,
+    sync::LazyLock
+};
+use rcgen::{
+    Issuer,
+    KeyPair,
+    SigningKey
+};
+use redis::{
+    streams::StreamReadOptions,
+    streams::StreamReadReply,
+    AsyncCommands,
+    FromRedisValue,
+    RedisResult
+};
+use common::{JobProgress, JobStatus, Config, Csr, NewCsr, Completion, ClientJob, PendingChallenge, NEW_CSR_EVENT_GROUP, CHALLENGE_EVENT_GROUP, JOB_PROGRESS_EVENT_GROUP, FINISHED_EVENT_GROUP, CsrId, Result, RedisUtils, Status};
 
 pub(crate) async fn handle_redis_events() -> Result<()> {
     let config = common::get_config();
@@ -28,6 +24,9 @@ pub(crate) async fn handle_redis_events() -> Result<()> {
         .await;
 
     let consumer: u64 = redis.incr("new-csr-worker", 1)
+        .await?;
+
+    let _: () = redis.xgroup_create_mkstream(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
         .await?;
 
     let _: RedisResult<NewCsr> = redis.xgroup_create(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
@@ -50,6 +49,7 @@ pub(crate) async fn handle_redis_events() -> Result<()> {
                     NEW_CSR_EVENT_GROUP => new_csr(FromRedisValue::from_redis_value(&value)?).await?,
                     CHALLENGE_EVENT_GROUP => challenge(FromRedisValue::from_redis_value(&value)?).await?,
                     JOB_PROGRESS_EVENT_GROUP => job_progress(FromRedisValue::from_redis_value(&value)?).await?,
+                    FINISHED_EVENT_GROUP => completion(FromRedisValue::from_redis_value(&value)?).await?,
                     key => {
                         log::warn!("Unknown job type {key} - skipping");
                         continue;
@@ -80,16 +80,18 @@ async fn new_csr(csr: NewCsr) -> Result<()> {
 
     // TODO: Check whether all parameters are acceptable. If not fail the CSR. If acceptable, dispatch a challenge job.
 
-    log::debug!("{csr:#?}");
+    // log::debug!("{csr:#?}");
 
     let _: () = redis.set(format!("csr:{csr_id}"), ron::to_string(&Csr::from(csr.clone()))?)
         .await?;
 
-    let alt = blake3::hash(format!("{id};{pem}", id=csr.client_id, pem=csr.pem).as_bytes());
-    let alt = BASE64_ENGINE.encode(alt.as_bytes());
-    let _: () = redis.set(format!("alt:{alt}"), ron::to_string(&AltName {
+    let alt = common::get_alt_name(csr.client_id, &csr.pem);
+    log::debug!("Received certificate: Aliasing to 'alt:{alt}'");
+    let _: () = redis.set(format!("alt:{alt}"), ron::to_string(&ClientJob {
+        alias: alt,
         client_id: csr.client_id,
-        alias: csr_id,
+        serial: csr_id,
+        status: Status::Pending
     })?)
         .await?;
 
@@ -163,6 +165,7 @@ async fn job_progress(update: JobProgress) -> Result<()> {
                 Ok(cert) => {
                     log::info!("Certificate for client signed.");
                     redis.dispatch_event(Completion {
+                        client_id: csr.client_id,
                         id: update.id,
                         certificate: cert.pem()
                     }).await?;
@@ -199,12 +202,18 @@ async fn completion(completion: Completion) -> Result<()> {
         .await;
 
     let csr_key = format!("csr:{id}", id=completion.id);
-    let cert_key = format!("cert:{id}", id=completion.id);
     let mut csr: Csr = redis.get(&csr_key).await?;
+    let cert_key = format!("alt:{alt}", alt=csr.client_alias);
+    let client_job: ClientJob = redis.get(&cert_key).await?;
 
     csr.status = JobStatus::Stale;
 
-    let _: () = redis.set(cert_key, ron::to_string(&completion)?).await?;
+    let _: () = redis.set(cert_key, ron::to_string(&ClientJob {
+        status: Status::Success {
+            certificate: completion.certificate
+        },
+        ..client_job
+    })?).await?;
     let _: () = redis.set(csr_key, ron::to_string(&csr)?).await?;
 
     Ok(())

@@ -1,5 +1,5 @@
 [redis]
-url = "redis://localhost:6379"
+url = "redis://localhost:6379/?protocol=3"
 channel = ""
 task_queue_key = "event-queue"
 

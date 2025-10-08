@@ -51,8 +51,10 @@ multi_error! { global();
     ManualError = crate::error::ManualError;
     Custom = String;
     IoError = std::io::Error;
+    AddrParseError = std::net::AddrParseError;
     RedisError = redis::RedisError;
     RcGenError = rcgen::Error;
+    Base64DecodeError = base64::DecodeError;
     RonDeSpannedError = ron::de::SpannedError;
     RonDeError = ron::de::Error
 }
@@ -67,6 +69,10 @@ pub enum ManualError {
 impl global::Error {
     pub fn custom<T>(str: impl AsRef<str>) -> Result<T> {
         Err(str.as_ref().to_owned().into())
+    }
+    
+    pub fn other(str: impl AsRef<str>) -> Self {
+        str.as_ref().to_owned().into()
     }
 }
 

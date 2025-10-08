@@ -1,4 +1,4 @@
-use crate::CertmasterEvent;
+use crate::{encode_base64, CertmasterEvent};
 use redis::FromRedisValue;
 use redis_derive::FromRedisValue;
 use serde::Deserialize;
@@ -22,10 +22,24 @@ impl CertmasterEvent for NewCsr {
     }
 }
 
+/// This struct contains state that is relevant to the client.
 #[derive(Debug, FromRedisValue, Serialize, Deserialize)]
-pub struct AltName {
+pub struct ClientJob {
     pub client_id: u64,
-    pub alias: CsrId
+    pub serial: CsrId,
+    pub alias: String,
+    pub status: Status
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Status {
+    Pending,
+    Success {
+        certificate: PEMString
+    },
+    Error {
+        reason: String
+    }
 }
 
 #[derive(Debug, FromRedisValue, Serialize, Deserialize)]
@@ -54,6 +68,7 @@ impl CertmasterEvent for JobProgress {
 #[derive(Debug, FromRedisValue, Serialize, Deserialize)]
 pub struct Completion {
     pub id: CsrId,
+    pub client_id: u64,
     pub certificate: PEMString,
 }
 
@@ -70,6 +85,7 @@ pub type CsrId = u64;
 pub struct Csr {
     pub client_id: u64,
     pub(crate) pem: PEMString,
+    pub client_alias: String,
     pub status: JobStatus,
 }
 
@@ -81,8 +97,12 @@ impl Csr {
 
 impl From<NewCsr> for Csr {
     fn from(csr: NewCsr) -> Csr {
+        let alt = blake3::hash(format!("{id};{pem}", id=csr.client_id, pem=csr.pem).as_bytes());
+        let alt = encode_base64(alt.as_bytes());
+
         Csr {
             client_id: csr.client_id,
+            client_alias: alt,
             pem: csr.pem,
             status: JobStatus::Pending
         }
@@ -93,6 +113,7 @@ impl From<PEMString> for Csr {
     fn from(value: PEMString) -> Self {
         Self {
             client_id: 0,
+            client_alias: encode_base64(format!("0;{value}")),
             pem: value,
             status: JobStatus::Pending
         }
