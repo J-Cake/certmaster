@@ -1,0 +1,15 @@
+[redis]
+url = "redis://redis:6379/?protocol=3"
+channel = ""
+task_queue_key = "event-queue"
+
+[receiver]
+#inbox = "/var/spool/certmaster-inbox"
+inbox = "/home/jcake/.local/certmaster-inbox"
+rescan_interval = 2
+
+[ca]
+outbox = ""
+
+certificate = "/etc/certmaster/authority.crt"
+key = "/etc/certmaster/authority.key"
