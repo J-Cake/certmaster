@@ -23,4 +23,5 @@ pub async fn main() {
     });
 
     let (..) = tokio::join!(worker);
+    drop(config);
 }

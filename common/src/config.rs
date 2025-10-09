@@ -4,11 +4,43 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default)]
     pub redis: RedisConfig,
 
-    pub receiver: ReceiverConfig,
+    #[serde(default)]
+    pub inbox: InboxConfig,
+
+    #[serde(default)]
     pub ca: CaConfig,
-    pub web: WebConfig
+
+    #[serde(default)]
+    pub web: WebConfig,
+
+    #[serde(default)]
+    pub modules: ModuleList
+}
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+pub struct ModuleList {
+    pub ca: bool,
+    pub web: bool,
+    pub cli: bool,
+    pub inbox: bool,
+    pub gc: bool,
+    pub hooks: bool
+}
+
+impl Default for ModuleList {
+    fn default() -> Self {
+        Self {
+            ca: true,
+            web: true,
+            cli: false,
+            inbox: false,
+            gc: false,
+            hooks: false,
+        }
+    }
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -29,7 +61,7 @@ fn task_queue_key_default() -> String { "event-queue".into() }
 fn job_list_key_default() -> String { "job-list".into() }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ReceiverConfig {
+pub struct InboxConfig {
     pub inbox: PathBuf,
 
     pub rescan_interval: u64,
@@ -37,8 +69,6 @@ pub struct ReceiverConfig {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct CaConfig {
-    pub outbox: PathBuf,
-
     #[serde(default)]
     pub hooks: Vec<PathBuf>,
 

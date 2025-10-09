@@ -1,17 +1,17 @@
-use std::io;
+use crate::ClientJob;
+use crate::Result;
 use async_trait::async_trait;
 use redis::aio::MultiplexedConnection;
-use redis::{AsyncCommands, FromRedisValue, RedisError};
-use redis::streams::StreamAddOptions;
-use serde::{Deserialize, Serialize};
+use redis::AsyncCommands;
+use redis::FromRedisValue;
 use serde::de::DeserializeOwned;
-use crate::{ClientJob, Csr, NewCsr, RedisConfig, NEW_CSR_EVENT_GROUP};
-use crate::Result;
+use serde::Serialize;
+use std::io;
 
 #[async_trait]
 pub trait RedisUtils {
     async fn dispatch_event<Event: CertmasterEvent + Send>(&mut self, event: Event) -> io::Result<()>;
-    async fn get_job(&mut self, alias: &str) -> Result<ClientJob>;
+    async fn get_jobs_by_alias<T: AsRef<str>>(&mut self, alias: impl Iterator<Item=T> + Send) -> Result<Vec<ClientJob>>;
 }
 pub trait CertmasterEvent: Serialize + DeserializeOwned + FromRedisValue {
     fn event_name() -> &'static str;
@@ -32,8 +32,15 @@ impl RedisUtils for MultiplexedConnection {
         Ok(())
     }
 
-    async fn get_job(&mut self, alias: &str) -> Result<ClientJob> {
+    async fn get_jobs_by_alias<T: AsRef<str>>(&mut self, alias: impl Iterator<Item=T> + Send) -> Result<Vec<ClientJob>> {
+        let jobs = alias
+            .map(|i| format!("alt:{str}", str=i.as_ref()))
+            .collect::<Vec<_>>();
 
-        Ok(self.get(format!("alt:{alias}")).await?)
+        if jobs.is_empty() {
+            return Ok(vec![]);
+        }
+
+        Ok(self.mget(jobs).await?)
     }
 }

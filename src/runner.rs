@@ -1,9 +1,8 @@
 use std::{
     io,
-    sync::LazyLock
+    time::SystemTime,
+    time::UNIX_EPOCH
 };
-use std::time::{SystemTime, UNIX_EPOCH};
-use actix_web::cookie::time::macros::time;
 use rcgen::{
     Issuer,
     KeyPair,
@@ -16,7 +15,24 @@ use redis::{
     FromRedisValue,
     RedisResult
 };
-use common::{JobProgress, JobStatus, Config, Csr, NewCsr, Completion, ClientJob, PendingChallenge, NEW_CSR_EVENT_GROUP, CHALLENGE_EVENT_GROUP, JOB_PROGRESS_EVENT_GROUP, FINISHED_EVENT_GROUP, CsrId, Result, RedisUtils, Status};
+use common::{
+    JobProgress,
+    JobStatus,
+    Config,
+    Csr,
+    NewCsr,
+    Completion,
+    ClientJob,
+    PendingChallenge,
+    NEW_CSR_EVENT_GROUP,
+    CHALLENGE_EVENT_GROUP,
+    JOB_PROGRESS_EVENT_GROUP,
+    FINISHED_EVENT_GROUP,
+    CsrId,
+    Result,
+    RedisUtils,
+    Status
+};
 
 pub(crate) async fn handle_redis_events() -> Result<()> {
     let config = common::get_config();
@@ -81,8 +97,7 @@ async fn new_csr(csr: NewCsr) -> Result<()> {
     let params = rcgen::CertificateSigningRequestParams::from_pem(&csr.pem)?;
 
     // TODO: Check whether all parameters are acceptable. If not fail the CSR. If acceptable, dispatch a challenge job.
-
-    // log::debug!("{csr:#?}");
+    let _params = params;
 
     let primary_key = format!("csr:{csr_id}");
     let _: () = redis.set(&primary_key, ron::to_string(&Csr::from(csr.clone()))?)
@@ -145,7 +160,7 @@ async fn job_progress(update: JobProgress) -> Result<()> {
         },
         JobStatus::ChallengePassed => {
             log::info!("Challenge {id} passed", id=update.id);
-            let signing = ('crt: {
+            let signing = 'crt: {
                 let issuer = match get_issuer(&config).await {
                     Ok(issuer) => issuer,
                     Err(err) => break 'crt Err(err),
@@ -167,7 +182,7 @@ async fn job_progress(update: JobProgress) -> Result<()> {
                 };
 
                 Ok(result)
-            });
+            };
 
             let new_status = match signing {
                 Ok(cert) => {

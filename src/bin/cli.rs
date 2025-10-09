@@ -32,7 +32,7 @@ use tokio::{
 const EMPTY: String = String::new();
 
 static SEQ: AtomicU64 = AtomicU64::new(0);
-static PROMPT: LazyLock<OnceCell<Prompt>> = LazyLock::new(|| OnceCell::new());
+static PROMPT: LazyLock<OnceCell<Prompt>> = LazyLock::new(OnceCell::new);
 
 #[derive(Debug, Clone)]
 struct Prompt {
@@ -107,8 +107,6 @@ pub async fn main() -> Result<()> {
 
         prompt.write(res).await?;
     }
-
-    drop(config);
 }
 
 async fn handle_command(mut args: SplitWhitespace<'_>) -> Result<String> {

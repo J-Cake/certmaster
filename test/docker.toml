@@ -3,13 +3,11 @@ url = "redis://redis:6379/?protocol=3"
 channel = ""
 task_queue_key = "event-queue"
 
-[receiver]
-#inbox = "/var/spool/certmaster-inbox"
-inbox = "/home/jcake/.local/certmaster-inbox"
+[inbox]
+inbox = "/var/spool/certmaster-inbox"
 rescan_interval = 2
 
 [ca]
-outbox = ""
 hooks = [
     "~/.local/main.rn",
     "~/.local/on-csr.rn"

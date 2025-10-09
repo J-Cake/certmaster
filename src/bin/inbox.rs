@@ -37,7 +37,7 @@ pub async fn main() {
     let reindex = tokio::spawn(watch_reindex(reindex_rx, __req_tx));
 
     watcher
-        .watch(config.receiver.inbox.as_path(), notify::RecursiveMode::Recursive)
+        .watch(config.inbox.inbox.as_path(), notify::RecursiveMode::Recursive)
         .expect("Failed to start watcher");
 
     let (..) = tokio::join!(initial, fs_events, dispatcher, reindex);
@@ -50,7 +50,7 @@ pub async fn main() {
 pub(crate) async fn init_watcher(fs_tx: mpsc::UnboundedSender<notify::Event>) -> impl Watcher {
     let config = common::get_config();
 
-    tokio::fs::create_dir_all(config.receiver.inbox.as_path())
+    tokio::fs::create_dir_all(config.inbox.inbox.as_path())
         .await
         .expect("Failed to create inbox");
 
@@ -66,7 +66,7 @@ pub(crate) async fn init_watcher(fs_tx: mpsc::UnboundedSender<notify::Event>) ->
 pub(crate) async fn read_inbox(sender: mpsc::Sender<PathBuf>) {
     let config = common::get_config();
 
-    let mut dir = tokio::fs::read_dir(config.receiver.inbox.as_path())
+    let mut dir = tokio::fs::read_dir(config.inbox.inbox.as_path())
         .await
         .expect("Failed to read inbox");
 
@@ -80,7 +80,7 @@ pub(crate) async fn read_inbox(sender: mpsc::Sender<PathBuf>) {
 pub(crate) async fn watch_reindex(rx: mpsc::Receiver<()>, sender: mpsc::Sender<PathBuf>) {
     let config = common::get_config();
 
-    let mut rx = debounce(rx, Duration::from_secs(config.receiver.rescan_interval));
+    let mut rx = debounce(rx, Duration::from_secs(config.inbox.rescan_interval));
     while let Some(_) = rx.recv().await {
         log::trace!("Reindexing...");
 

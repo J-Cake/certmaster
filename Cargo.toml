@@ -17,13 +17,19 @@ once_cell = "1.21.3"
 futures-util = "0.3.31"
 actix-web = { version = "4.11.0" }
 serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.145" }
 
 [features]
 default = []
 
 [[bin]]
-name = "receiver"
-src = "./bin/receiver.rs"
+name = "inbox"
+
+[[bin]]
+name = "web"
+
+[[bin]]
+name = "cli"
 
 [workspace]
 members = ["common", "redis-derive"]
