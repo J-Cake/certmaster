@@ -2,6 +2,8 @@ use std::{
     io,
     sync::LazyLock
 };
+use std::time::{SystemTime, UNIX_EPOCH};
+use actix_web::cookie::time::macros::time;
 use rcgen::{
     Issuer,
     KeyPair,
@@ -82,7 +84,8 @@ async fn new_csr(csr: NewCsr) -> Result<()> {
 
     // log::debug!("{csr:#?}");
 
-    let _: () = redis.set(format!("csr:{csr_id}"), ron::to_string(&Csr::from(csr.clone()))?)
+    let primary_key = format!("csr:{csr_id}");
+    let _: () = redis.set(&primary_key, ron::to_string(&Csr::from(csr.clone()))?)
         .await?;
 
     let alt = common::get_alt_name(csr.client_id, &csr.pem);
@@ -93,6 +96,11 @@ async fn new_csr(csr: NewCsr) -> Result<()> {
         serial: csr_id,
         status: Status::Pending
     })?)
+        .await?; // 2. index it in a ZSET by timestamp
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)?
+        .as_secs_f64();
+    let _: () = redis.zadd(&config.redis.job_list_key, &primary_key, timestamp)
         .await?;
 
     redis.dispatch_event(PendingChallenge {

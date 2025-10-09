@@ -3,7 +3,7 @@
 }
 
 
-google.com, www.google.com {
+localhost {
     tls /var/www/html/service.crt /var/www/html/service.key
 
     file_server {

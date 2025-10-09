@@ -51,6 +51,7 @@ multi_error! { global();
     ManualError = crate::error::ManualError;
     Custom = String;
     IoError = std::io::Error;
+    SystemTimeError = std::time::SystemTimeError;
     AddrParseError = std::net::AddrParseError;
     RedisError = redis::RedisError;
     RcGenError = rcgen::Error;

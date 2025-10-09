@@ -17,3 +17,6 @@ hooks = [
 
 certificate = "./test/authority.crt"
 key = "./test/authority.key"
+
+[web]
+socket = "0.0.0.0:9999"

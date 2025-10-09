@@ -1,3 +1,4 @@
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
@@ -6,7 +7,8 @@ pub struct Config {
     pub redis: RedisConfig,
 
     pub receiver: ReceiverConfig,
-    pub ca: CaConfig
+    pub ca: CaConfig,
+    pub web: WebConfig
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -17,10 +19,14 @@ pub struct RedisConfig {
 
     #[serde(default = "task_queue_key_default")]
     pub task_stream_key: String,
+    #[serde(default = "job_list_key_default")]
+    pub job_list_key: String,
 }
 
 #[inline]
 fn task_queue_key_default() -> String { "event-queue".into() }
+#[inline]
+fn job_list_key_default() -> String { "job-list".into() }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ReceiverConfig {
@@ -38,4 +44,17 @@ pub struct CaConfig {
 
     pub certificate: PathBuf,
     pub key: PathBuf
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WebConfig {
+    pub socket: SocketAddr,
+}
+
+impl Default for WebConfig {
+    fn default() -> WebConfig {
+        WebConfig {
+            socket: SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 9999),
+        }
+    }
 }
