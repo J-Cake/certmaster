@@ -28,8 +28,8 @@ pub(crate) async fn handle_redis_events() -> Result<()> {
     let consumer: u64 = redis.incr("new-csr-worker", 1)
         .await?;
 
-    let _: () = redis.xgroup_create_mkstream(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
-        .await?;
+    // let _: () = redis.xgroup_create_mkstream(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
+    //     .await?;
 
     let _: RedisResult<NewCsr> = redis.xgroup_create(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
         .await;

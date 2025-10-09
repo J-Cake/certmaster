@@ -22,6 +22,12 @@ impl CertmasterEvent for NewCsr {
     }
 }
 
+impl NewCsr {
+    pub fn alt(&self) -> String {
+        crate::get_alt_name(self.client_id, &self.pem)
+    }
+}
+
 /// This struct contains state that is relevant to the client.
 #[derive(Debug, FromRedisValue, Serialize, Deserialize)]
 pub struct ClientJob {

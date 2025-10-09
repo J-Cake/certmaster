@@ -5,12 +5,13 @@ use redis::{AsyncCommands, FromRedisValue, RedisError};
 use redis::streams::StreamAddOptions;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
-use crate::{NewCsr, RedisConfig, NEW_CSR_EVENT_GROUP};
+use crate::{ClientJob, Csr, NewCsr, RedisConfig, NEW_CSR_EVENT_GROUP};
 use crate::Result;
 
 #[async_trait]
 pub trait RedisUtils {
     async fn dispatch_event<Event: CertmasterEvent + Send>(&mut self, event: Event) -> io::Result<()>;
+    async fn get_job(&mut self, alias: &str) -> Result<ClientJob>;
 }
 pub trait CertmasterEvent: Serialize + DeserializeOwned + FromRedisValue {
     fn event_name() -> &'static str;
@@ -29,5 +30,10 @@ impl RedisUtils for MultiplexedConnection {
             .map_err(io::Error::other)?;
 
         Ok(())
+    }
+
+    async fn get_job(&mut self, alias: &str) -> Result<ClientJob> {
+
+        Ok(self.get(format!("alt:{alias}")).await?)
     }
 }
