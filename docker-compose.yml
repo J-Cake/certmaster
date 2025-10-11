@@ -1,10 +1,13 @@
 name: 'Certmaster'
 
+x-common-build: &common-build
+  context: .
+  dockerfile: ./ca.dockerfile
+
 services:
   public:
-#    image: caddy:latest
     build:
-      dockerfile: './ca.dockerfile'
+      <<: *common-build
       target: 'public'
     container_name: 'public'
     restart: unless-stopped
@@ -28,8 +31,7 @@ services:
 
   certmaster:
     build:
-      context: '.'
-      dockerfile: './ca.dockerfile'
+      <<: *common-build
       target: 'certmaster'
     container_name: 'certmaster'
     restart: unless-stopped
@@ -44,8 +46,7 @@ services:
 
   api:
     build:
-      context: '.'
-      dockerfile: './ca.dockerfile'
+      <<: *common-build
       target: 'certmaster'
     container_name: 'api'
     restart: unless-stopped

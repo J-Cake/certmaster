@@ -2,14 +2,14 @@ FROM rust:trixie AS rust
 
 LABEL authors="jcake"
 
-ARG CHECKOUT="https://github.com/J-Cake/certmaster.git/"
-
 WORKDIR "/app"
 RUN apt update && apt upgrade -y && apt install jq -y
-RUN git clone ${CHECKOUT} && cd certmaster
+COPY "./" "/app/certmaster"
 WORKDIR "/app/certmaster"
-RUN mkdir out
-RUN cp $(cargo build --release --message-format json | jq -sr '.[] | select(.reason == "compiler-artifact" and .executable).executable') ./out
+RUN mkdir -p "./out"
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cp $(cargo build --release --message-format json | jq -sr '.[] | select(.reason == "compiler-artifact" and .executable).executable') ./out
 
 FROM node:trixie AS node
 
