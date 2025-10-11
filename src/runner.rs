@@ -41,14 +41,17 @@ pub(crate) async fn handle_redis_events() -> Result<()> {
         .connect()
         .await;
 
-    let consumer: u64 = redis.incr("new-csr-worker", 1)
-        .await?;
-
-    // let _: () = redis.xgroup_create_mkstream(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
-    //     .await?;
+    match redis.xgroup_create_mkstream(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
+        .await {
+        Ok(()) => {},
+        Err(err) => log::warn!("Failed to construct stream: {err:?} - ignoring error")
+    };
 
     let _: RedisResult<NewCsr> = redis.xgroup_create(&config.redis.task_stream_key, NEW_CSR_EVENT_GROUP, "0")
         .await;
+    
+    let consumer: u64 = redis.incr("new-csr-worker", 1)
+        .await?;
 
     let options = StreamReadOptions::default()
         .block(0)

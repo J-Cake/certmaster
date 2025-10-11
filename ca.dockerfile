@@ -15,23 +15,27 @@ FROM node:trixie AS node
 
 LABEL authors="jcake"
 
-WORKDIR "/app"
 COPY --from=rust "/app/certmaster" "/app/certmaster"
+WORKDIR "/app/certmaster"
 RUN npm install
 RUN npm run build:release
 
-FROM debian:trixie-slim AS run
+FROM debian:trixie-slim AS certmaster
 
 LABEL authors="jcake"
 
-RUN mkdir "./out"
+RUN mkdir -p "./out" "/etc/certmaster"
 COPY --from=rust "/app/certmaster/out/*" "/bin"
-
-RUN mkdir -p "/etc/certmaster"
 COPY --from=rust "/app/certmaster/config.toml" "/etc/certmaster/config.toml"
+
 VOLUME "/etc/certmaster"
 
 ENV RUST_LOG=info
 
 ENTRYPOINT ["/bin/certmaster"]
-CMD ["-c", "/etc/certmaster/config.toml"]
+
+FROM caddy:latest AS public
+COPY --from=node "/app/certmaster/build" "/var/www/html"
+
+VOLUME "/var/www/html"
+#VOLUME "/etc/caddy/Caddyfile"

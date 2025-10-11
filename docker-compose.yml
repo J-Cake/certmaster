@@ -2,7 +2,10 @@ name: 'Certmaster'
 
 services:
   public:
-    image: caddy:latest
+#    image: caddy:latest
+    build:
+      dockerfile: './ca.dockerfile'
+      target: 'public'
     container_name: 'public'
     restart: unless-stopped
     ports:
@@ -11,11 +14,8 @@ services:
       - '443:443/udp'
     volumes:
       - "./Caddyfile:/etc/caddy/Caddyfile"
-      - "./build:/var/www/html"
-      - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       - certmaster
-
 
   redis:
     image: "redis:8.2-rc1-alpine3.22"
@@ -30,14 +30,34 @@ services:
     build:
       context: '.'
       dockerfile: './ca.dockerfile'
+      target: 'certmaster'
     container_name: 'certmaster'
     restart: unless-stopped
     command: ["-c", "/etc/certmaster/docker.toml"]
+    environment:
+      RUST_LOG: "certmaster=trace,common=trace,info"
+      RUST_BACKTRACE: 1
     volumes:
       - "./test:/etc/certmaster"
     networks:
       - certmaster
 
+  api:
+    build:
+      context: '.'
+      dockerfile: './ca.dockerfile'
+      target: 'certmaster'
+    container_name: 'api'
+    restart: unless-stopped
+    entrypoint: "/bin/web"
+    command: ["-c", "/etc/certmaster/docker.toml"]
+    environment:
+      RUST_LOG: "certmaster=trace,common=trace,web=trace,info"
+      RUST_BACKTRACE: 1
+    volumes:
+      - "./test:/etc/certmaster"
+    networks:
+      - certmaster
 
 networks:
   certmaster:
