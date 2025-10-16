@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::HttpResponse;
 use actix_web::middleware::Identity;
 use actix_web::web;
@@ -16,7 +17,13 @@ pub async fn main() -> Result<()> {
     let config = common::read_config().await;
 
     actix_web::HttpServer::new(|| {
+        let cors = Cors::default()
+            .allow_any_header()
+            .allow_any_method()
+            .allow_any_origin();
+
         actix_web::App::new()
+            .wrap(cors)
             .service(get_version)
             .service(get_jobs)
             .service(get_job)

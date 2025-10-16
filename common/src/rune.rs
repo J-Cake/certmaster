@@ -20,9 +20,6 @@ impl Runner {
         let mut sources = rune::Sources::new();
 
         for hook in config.ca.hooks.iter() {
-            let hook = crate::resolve_path(hook, Some(root.as_ref().to_owned()))
-                .await?;
-
             let perm = tokio::fs::metadata(&hook).await?;
 
             #[cfg(unix)]
