@@ -8,7 +8,7 @@ COPY "./" "/app/certmaster"
 WORKDIR "/app/certmaster"
 RUN mkdir -p "./out"
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
+    --mount=type=cache,target=/app/certmaster/target \
     cp $(cargo build --release --message-format json | jq -sr '.[] | select(.reason == "compiler-artifact" and .executable).executable') ./out
 
 FROM node:trixie AS node
@@ -32,7 +32,7 @@ VOLUME "/etc/certmaster"
 
 ENV RUST_LOG=info
 
-ENTRYPOINT ["/bin/certmaster"]
+ENTRYPOINT ["/bin/certmaster"]x
 
 FROM caddy:latest AS public
 COPY --from=node "/app/certmaster/build" "/var/www/html"

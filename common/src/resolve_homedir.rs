@@ -1,14 +1,23 @@
 use std::ffi::OsStr;
-use std::io;
+use std::{env, io};
 use std::path::*;
 
-pub async fn resolve_path(path: impl AsRef<Path>) -> io::Result<PathBuf> {
+pub async fn resolve_path(path: impl AsRef<Path>, root: Option<impl AsRef<Path>>) -> io::Result<PathBuf> {
     let bits = path
         .as_ref()
         .components()
         .collect::<Vec<Component>>();
 
-    let path: PathBuf = match bits.get(0) {
+    let root = root.map(|i| i.as_ref().to_owned())
+        .or_else(|| env::home_dir())
+        .expect("Could not determine root directory");
+
+    let path: PathBuf = match bits.first() {
+        Some(Component::CurDir) => root.components()
+            .chain(bits
+                .iter()
+                .cloned())
+            .collect(),
         Some(Component::Normal(pref)) if pref == &OsStr::new("~") =>
             std::env::home_dir()
                 .map(|home| home

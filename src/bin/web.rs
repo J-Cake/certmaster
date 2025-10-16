@@ -17,6 +17,7 @@ pub async fn main() -> Result<()> {
 
     actix_web::HttpServer::new(|| {
         actix_web::App::new()
+            .service(get_version)
             .service(get_jobs)
             .service(get_job)
             .service(post_job)
@@ -28,6 +29,16 @@ pub async fn main() -> Result<()> {
     .await?;
 
     Ok(())
+}
+
+#[actix_web::get("/version")]
+pub async fn get_version() -> HttpResponse {
+    HttpResponse::Ok()
+        .json(serde_json::json! {{
+            "success": true,
+            "service": "certmaster-api",
+            "version": env!("CARGO_PKG_VERSION").to_string(),
+        }})
 }
 
 #[derive(Serialize, Deserialize)]
@@ -170,7 +181,7 @@ pub async fn post_job(requests: web::Json<Vec<common::NewCsr>>) -> actix_web::Re
 }
 
 #[actix_web::post("/challenge")]
-pub async fn post_challenge(id: web::Query<Selection>) -> actix_web::Result<HttpResponse> {
+pub async fn post_challenge(id: web::Json<Selection>) -> actix_web::Result<HttpResponse> {
     let config = common::get_config();
     let mut redis = config.redis.connect().await;
 

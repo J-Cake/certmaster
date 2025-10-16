@@ -1,11 +1,28 @@
-### GET request to example server
+### Sanity check
+GET http://localhost:9999/version
+
+### List all jobs
 GET http://localhost:9999/jobs
 
-###
-POST http://localhost:9999/csr
+### Submit a new CSR to the queue
+POST http://localhost:9999/job
+Content-Type: application/json
+
+[
+    {
+        "client_id": 1,
+        "pem": "-----BEGIN CERTIFICATE REQUEST-----\nMIIBrTCCAVMCAQAwga0xCzAJBgNVBAYTAkRFMRswGQYDVQQIDBJCYWRlbi1Xw7xy\ndHRlbWJlcmcxEjAQBgNVBAcMCVTDvGJpbmdlbjEbMBkGA1UECgwSSlNjaG5laWRl\nclByb2plY3RzMRYwFAYDVQQLDA1JVCBEZXBhcnRtZW50MRMwEQYDVQQDDApnb29n\nbGUuY29tMSMwIQYJKoZIhvcNAQkBFhRub3QubXlAZW1haWwuYWRkcmVzczBZMBMG\nByqGSM49AgEGCCqGSM49AwEHA0IABCpdaNkTr//uJF/G/RgWbhjwB0hcVjjx2IYn\n4B0g00qY3QhobplEdbGshnPLrFGDhJZ0XYNPgXZucHYyfGk2H9KgQzBBBgkqhkiG\n9w0BCQ4xNDAyMDAGA1UdEQQpMCeCCmdvb2dsZS5jb22CDnd3dy5nb29nbGUuY29t\ngglsb2NhbGhvc3QwCgYIKoZIzj0EAwIDSAAwRQIgKXC5bu7IgaCryqxWeKz04njz\nGnmog8fzOCM6/Wn8F90CIQDXiuihgkrOE7n4sK0VRKBPNUI7pdVNb1jjDwKiG1j4\nQQ==\n-----END CERTIFICATE REQUEST-----"
+    }
+]
+
+### Pass a challenge
+POST http://localhost:9999/challenge
 Content-Type: application/json
 
 {
-    "client_id": 1,
-    "pem": "-----BEGIN CERTIFICATE REQUEST-----\nMIIBrTCCAVMCAQAwga0xCzAJBgNVBAYTAkRFMRswGQYDVQQIDBJCYWRlbi1Xw7xy\ndHRlbWJlcmcxEjAQBgNVBAcMCVTDvGJpbmdlbjEbMBkGA1UECgwSSlNjaG5laWRl\nclByb2plY3RzMRYwFAYDVQQLDA1JVCBEZXBhcnRtZW50MRMwEQYDVQQDDApnb29n\nbGUuY29tMSMwIQYJKoZIhvcNAQkBFhRub3QubXlAZW1haWwuYWRkcmVzczBZMBMG\nByqGSM49AgEGCCqGSM49AwEHA0IABCpdaNkTr//uJF/G/RgWbhjwB0hcVjjx2IYn\n4B0g00qY3QhobplEdbGshnPLrFGDhJZ0XYNPgXZucHYyfGk2H9KgQzBBBgkqhkiG\n9w0BCQ4xNDAyMDAGA1UdEQQpMCeCCmdvb2dsZS5jb22CDnd3dy5nb29nbGUuY29t\ngglsb2NhbGhvc3QwCgYIKoZIzj0EAwIDSAAwRQIgKXC5bu7IgaCryqxWeKz04njz\nGnmog8fzOCM6/Wn8F90CIQDXiuihgkrOE7n4sK0VRKBPNUI7pdVNb1jjDwKiG1j4\nQQ==\n-----END CERTIFICATE REQUEST-----"
+    "jobs": ["YIkChfmxF470UuSczFb5FBAa5TWJCrPigAHWU0b64cc="]
 }
+
+### Get a job
+GET http://localhost:9999/job?jobs=YIkChfmxF470UuSczFb5FBAa5TWJCrPigAHWU0b64cc%3D&jobs=%20
+Content-Type: application/json

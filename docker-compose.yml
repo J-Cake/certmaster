@@ -16,6 +16,7 @@ services:
       - '443:443'
       - '443:443/udp'
     volumes:
+      - "./build:/var/www/html"
       - "./Caddyfile:/etc/caddy/Caddyfile"
     networks:
       - certmaster

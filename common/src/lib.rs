@@ -4,9 +4,10 @@ mod config;
 mod args;
 mod resolve_homedir;
 mod job;
-// mod rune;
+// mod rune;new-csr-worker
 mod redis_util;
 mod error;
+mod rune;
 
 use std::sync::LazyLock;
 use base64::Engine;

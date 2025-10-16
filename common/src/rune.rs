@@ -2,6 +2,7 @@ use std::io;
 use std::os::unix::fs::MetadataExt;
 use std::sync::{Arc, OnceLock};
 use rune::{Source, Unit};
+use rune::ast::Path;
 // use rune_std::Stdlib;
 use crate::Config;
 
@@ -15,11 +16,11 @@ impl Runner {
     fn vm(&self) -> rune::Vm {
         rune::Vm::new(self.runtime.clone(), self.unit.clone())
     }
-    async fn create_rn_context(config: &Config) -> io::Result<rune::Vm> {
+    async fn create_rn_context(config: &Config, root: impl AsRef<std::path::Path>) -> io::Result<rune::Vm> {
         let mut sources = rune::Sources::new();
 
         for hook in config.ca.hooks.iter() {
-            let hook = crate::resolve_path(hook)
+            let hook = crate::resolve_path(hook, Some(root.as_ref().to_owned()))
                 .await?;
 
             let perm = tokio::fs::metadata(&hook).await?;
