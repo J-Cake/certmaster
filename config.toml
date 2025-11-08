@@ -8,10 +8,7 @@ inbox = "/home/jcake/.local/certmaster-inbox"
 rescan_interval = 2
 
 [ca]
-hooks = [
-    "~/.local/main.rn",
-    "~/.local/on-csr.rn"
-]
+hooks = []
 
 certificate = "./test/authority.crt"
 key = "./test/authority.key"

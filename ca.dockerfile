@@ -28,14 +28,8 @@ RUN mkdir -p "./out" "/etc/certmaster"
 COPY --from=rust "/app/certmaster/out/*" "/bin"
 COPY --from=rust "/app/certmaster/config.toml" "/etc/certmaster/config.toml"
 
-VOLUME "/etc/certmaster"
+#VOLUME "/etc/certmaster"
 
 ENV RUST_LOG=info
 
-ENTRYPOINT ["/bin/certmaster"]x
-
-FROM caddy:latest AS public
-COPY --from=node "/app/certmaster/build" "/var/www/html"
-
-VOLUME "/var/www/html"
-#VOLUME "/etc/caddy/Caddyfile"
+ENTRYPOINT ["/bin/certmaster"]

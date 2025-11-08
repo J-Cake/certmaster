@@ -1,4 +1,4 @@
-name: 'Certmaster'
+name: 'certmaster'
 
 x-common-build: &common-build
   context: .
@@ -6,9 +6,7 @@ x-common-build: &common-build
 
 services:
   public:
-    build:
-      <<: *common-build
-      target: 'public'
+    image: caddy:latest
     container_name: 'public'
     restart: unless-stopped
     ports:
@@ -16,8 +14,10 @@ services:
       - '443:443'
       - '443:443/udp'
     volumes:
-      - "./build:/var/www/html"
-      - "./Caddyfile:/etc/caddy/Caddyfile"
+      - "./build:/www"
+      - "data:/data"
+      - "./Caddyfile:/config/Caddyfile"
+    command: ["caddy", "run", "-c", "/config/Caddyfile"]
     networks:
       - certmaster
 
@@ -41,7 +41,7 @@ services:
       RUST_LOG: "certmaster=trace,common=trace,info"
       RUST_BACKTRACE: 1
     volumes:
-      - "./test:/etc/certmaster"
+      - "test:/etc/certmaster"
     networks:
       - certmaster
 
@@ -56,11 +56,22 @@ services:
     environment:
       RUST_LOG: "certmaster=trace,common=trace,web=trace,info"
       RUST_BACKTRACE: 1
+    ports:
+      - "9999:9999"
     volumes:
-      - "./test:/etc/certmaster"
+      - "test:/etc/certmaster"
     networks:
       - certmaster
 
 networks:
   certmaster:
     driver: bridge
+
+volumes:
+  data:
+  test:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: './test'

@@ -27,7 +27,7 @@ pub async fn read_config() -> Arc<Config> {
         .expect("Failed to resolve issuer key");
 
     config.ca.certificate = crate::resolve_path(config.ca.certificate, Some(&args.config)).await
-        .expect("Failed to resolve issuer key");
+        .expect("Failed to resolve issuer certificate");
 
     config.ca.hooks = config.ca.hooks
         .into_iter()
@@ -38,6 +38,8 @@ pub async fn read_config() -> Arc<Config> {
         .into_iter()
         .collect::<std::io::Result<Vec<_>>>()
         .expect("Failed to resolve hooks");
+
+    log::debug!("config: {config:#?}");
 
     let config = Arc::new(config);
 

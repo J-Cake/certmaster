@@ -12,6 +12,14 @@ pub async fn resolve_path(path: impl AsRef<Path>, root: Option<impl AsRef<Path>>
         .or_else(|| env::home_dir())
         .expect("Could not determine root directory");
 
+    let root = if tokio::fs::metadata(&root).await?.is_file() {
+        root.parent()
+            .expect("We got a file as a root directory somehow")
+            .to_owned()
+    } else {
+        root
+    };
+
     let path: PathBuf = match bits.first() {
         Some(Component::CurDir) => root.components()
             .chain(bits

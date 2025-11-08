@@ -17,7 +17,7 @@ pub struct Config {
     pub web: WebConfig,
 
     #[serde(default)]
-    pub modules: ModuleList
+    pub modules: ModuleList,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]

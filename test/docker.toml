@@ -9,12 +9,12 @@ rescan_interval = 2
 
 [ca]
 hooks = [
-    "~/.local/main.rn",
-    "~/.local/on-csr.rn"
+#    "~/.local/main.rn",
+#    "~/.local/on-csr.rn"
 ]
 
 certificate = "./authority.crt"
 key = "./authority.key"
 
 [web]
-socket = "0.0.0.0:9999"
+socket = "[::]:9999"

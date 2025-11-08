@@ -1,10 +1,20 @@
 localhost {
+    # API routes
+    handle_path /api/* {
+        reverse_proxy api:9999
+    }
+
+    # Everything else: static + SPA fallback
     handle {
-        root * /var/www/html
+        @notAPI {
+            not path /api/*
+        }
 
-        try_files {path} /
-
-        file_server
+        handle @notAPI {
+            root * /www
+            try_files {path} /index.html
+            file_server
+        }
     }
 
     tls internal
