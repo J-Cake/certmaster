@@ -12,7 +12,7 @@ localhost {
 
         handle @notAPI {
             root * /www
-            try_files {path} /index.html
+            try_files {path} /
             file_server
         }
     }

@@ -4,17 +4,17 @@
     "version": "0.1.0",
     "type": "module",
     "scripts": {
-        "build": "node ./build.js",
-        "build:release": "node ./build.js --prod",
-        "serve": "caddy run -c Caddyfile"
+        "build:dev": "node ./build.js",
+        "build:prod": "node ./build.js --prod"
     },
     "dependencies": {
+        "@gera2ld/tarjs": "latest",
+        "@peculiar/x509": "^1.14.0",
         "mousetrap": "^1.6.5",
         "mousetrap-global-bind": "^1.1.0",
         "react": "latest",
         "react-dom": "latest",
-        "urijs": "^1.19.7",
-        "@gera2ld/tarjs": "latest"
+        "urijs": "^1.19.7"
     },
     "devDependencies": {
         "@types/mousetrap": "^1.6.15",

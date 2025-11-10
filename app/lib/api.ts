@@ -1,7 +1,4 @@
 import uri from 'urijs';
-import * as tarjs from '@gera2ld/tarjs';
-
-import archive, {Archive} from "./archive.js";
 
 export abstract class Api {
 	readonly #baseUri: uri;
@@ -60,182 +57,45 @@ export abstract class Api {
 	}
 }
 
-export default class DockerApi extends Api {
+export default class CertmasterApi extends Api {
 	constructor(baseUri: uri) {
 		super(baseUri);
 	}
 
-	async listContainers(): Promise<Container[]> {
-		return await this.fetchJson("/containers/json?all=true")
-			.then((containers: ApiContainer[]) => containers.map(container => new Container(this.baseUri, container)));
+	async version(): Promise<ApiVersion> {
+		return this.fetchJson("/version")
+	}
+
+	async getJobs(max: number = DEFAULT_MAX_JOBS): Promise<Job[]> {
+		return this.fetchJson(`/jobs?${new URLSearchParams({ jobs: max.toString() })}`)
+			.then(res => res.jobs)
+	}
+
+	async getJobById(id: string): Promise<Job> {
+		return this.fetchJson(`/job?${new URLSearchParams({ jobs: id })}`)
 	}
 }
 
-export interface ApiContainer {
-	readonly Names: string[];
-	readonly Id: string;
-	readonly State: string;
+export const DEFAULT_MAX_JOBS = 50;
+
+export interface ApiVersion {
+	"service": string,
+	"success": boolean,
+	"version": string
 }
 
-export class Container extends Api {
-	public constructor(baseUri: uri, readonly container: ApiContainer) {
-		super(baseUri);
-	}
-
-	get baseUri(): uri {
-		return super.baseUri
-			.pathname(`${super.baseUri.path()}/./containers/${this.id}/`);
-	}
-
-	get apiUri(): uri {
-		return super.baseUri;
-	}
-
-	get id(): string {
-		return this.container.Id;
-	}
-
-	get name(): string {
-		return this.container.Names[0];
-	}
-
-	get last_known_state(): string {
-		return this.container.State;
-	}
-
-	private getSuper(): Api {
-		const base = super.baseUri;
-		return new class extends Api {
-			constructor() {
-				super(base);
-			}
-		}
-	}
-
-	async archive(path: string): Promise<Archive> {
-		return await this
-			.fetchBlob(`/archive?path=${path}`, 'GET', {'accept': 'application/x-tar'})
-			.then(tape => archive(tape));
-	}
-
-	async saveArchive(path: string, archive: Archive): Promise<void> {
-		const writer = new tarjs.TarWriter;
-
-		await Promise.all(archive.listFiles()
-			.filter(file => file.meta().name.endsWith('.conf'))
-			.map(async file => {
-				const blob = await file.read();
-				writer.addFile(file.meta().name, blob);
-			}));
-
-		if (this.last_known_state == 'running') {
-			await this.exec(['rm', '-rf', path])
-				.catch(() => {
-				});
-			await this.exec(['mkdir', '-p', path])
-				.catch(() => {
-				});
-		}
-		await this.fetchVoid(`/archive?path=${path}`, 'PUT', {'content-type': 'application/x-tar'}, await writer.write());
-	}
-
-	async exec(cmd: string[]): Promise<void> {
-		const id = await this.fetchJson('/exec', 'POST', {}, {
-			AttachStdin: false,
-			AttachStdout: true,
-			AttachStderr: true,
-			Detach: false,
-			Tty: false,
-			Cmd: cmd,
-		}).then(res => res['Id'] as string);
-
-		const superClass = this.getSuper();
-
-		await superClass.fetchVoid(`/exec/${id}/start`, 'POST', {'content-type': 'application/json'}, JSON.stringify({
-			Detach: false,
-			Tty: false,
-		}));
-
-		const isOk = await superClass.fetchJson(`/exec/${id}/json`, 'GET')
-			.then(json => json['Running'] == false && json['ExitCode'] == 0);
-
-		if (isOk)
-			return;
-
-		else throw new Error(`Failed to execute command: ${cmd.join(' ')}`);
-	}
-
-	async *monitor(options?: {
-		type?: 'container',
-		signal ? : AbortSignal
-	}): AsyncGenerator<DockerEvent> {
-		const base = super.baseUri
-			.path(`${super.baseUri.path()}/./events`)
-			.addQuery('filter', JSON.stringify({container: [this.id], type: options?.type}))
-			.normalizePathname();
-
-		const res = await fetch(base.toString(), {
-			headers: {
-				'connection': 'keep-alive',
-			},
-			keepalive: true,
-			signal: options?.signal
-		})
-			.catch(() => {
-				throw new Error('Failed to connect to Docker');
-			});
-
-		if (res.body)
-			for await (const line of linesFromStream(res.body!, options?.signal))
-				yield JSON.parse(line);
-	}
-
-	async inspect(): Promise<any> {
-		return await this.fetchJson("/json");
-	}
-
-	async logs(): Promise<string> {
-		return await this.fetchJson("/logs");
-	}
-
-	async start(): Promise<void> {
-		return await this.fetchVoid("/start", "POST");
-	}
-
-	async restart(): Promise<void> {
-		return await this.fetchVoid("/restart?t=5", "POST");
-	}
-
-	async stop(): Promise<void> {
-		return await this.fetchVoid("/stop", "POST");
-	}
-
-	async signal(signal: string): Promise<void> {
-		return await this.fetchVoid(`/kill?signal=${signal}`, "POST", {});
-	}
+export interface Job {
+	clientId: string,
+	alias: string,
+	pem: string,
+	status: JobStatus
 }
 
-export async function* linesFromStream(stream: ReadableStream, abort?: AbortSignal) {
-	const reader = stream.getReader();
-	const decoder = new TextDecoder();
-	let buffer = '';
-
-	while (!abort?.aborted) {
-		const {value, done} = await reader.read();
-
-		if (done) break;
-
-		buffer += decoder.decode(value, {stream: true });
-		let parts = buffer.split('\n');
-		buffer = parts.pop()!; // last line may be incomplete
-
-		for (const line of parts) if (line.trim()) yield line;
-	}
-
-	if (buffer.trim()) yield buffer; // leftover
-}
-
-export interface DockerEvent {
-	Type: string,
-	status: string,
-}
+export type JobStatus =
+	"Pending" |
+	"ChallengePending" |
+	"ChallengePassed" |
+	{ "ChallengeFailed": { "reason": string } } |
+	"Finished" |
+	{ "SigningError": { "reason": string } } |
+	"Stale"

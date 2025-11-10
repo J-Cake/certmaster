@@ -89,9 +89,13 @@ pub type CsrId = u64;
 
 #[derive(Debug, FromRedisValue, Serialize, Deserialize)]
 pub struct Csr {
+    #[serde(rename = "clientId")]
     pub client_id: u64,
     pub(crate) pem: PEMString,
+
+    #[serde(rename = "alias")]
     pub client_alias: String,
+
     pub status: JobStatus,
 }
 

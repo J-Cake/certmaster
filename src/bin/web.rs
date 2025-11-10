@@ -111,6 +111,13 @@ pub struct Selection {
     jobs: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SingleOrCollection<'a, T: Serialize + Deserialize<'a>> {
+    One(T),
+    Many(Vec<T>)
+}
+
 #[actix_web::get("/job")]
 pub async fn get_job(id: web::Query<Selection>) -> actix_web::Result<HttpResponse> {
     let config = common::get_config();

@@ -1,5 +1,5 @@
 button, .button, select, input[type="button"], input[type="text"], input[type="number"], input[type="url"], input[type="password"], input[type="search"] {
-    padding: var(--spacing-s) var(--spacing-m);
+    padding: var(--spacing-xxs) var(--spacing-s);
     cursor: pointer;
 
     border: none;
@@ -57,14 +57,14 @@ select { text-align: left; }
 :is(button, .button, input[type="button"]).symbolic {
     font-size: 1em;
     line-height: 1em;
-    padding: var(--spacing-s);
+    padding: var(--spacing-xxs) var(--spacing-xs);
 }
 
 :is(button, .button, input[type="button"], select).primary {
     background: var(--accent);
     border: var(--border-dull);
     border-color: var(--accent-solid);
-    color: var(--foreground-accent);
+    color: var(--foreground);
 }
 
 :is(button, .button, input[type="button"], select), select, :is(button, .button, input[type="button"], select).secondary {
@@ -113,5 +113,5 @@ select { text-align: left; }
     background: var(--red);
     border: var(--border-dull);
     border-color: var(--red-solid);
-    color: var(--foreground-accent);
+    color: var(--foreground);
 }

@@ -106,10 +106,10 @@
 
     /* Theme Values */
 
-    --accent-h: 172deg;
-    --accent-s: 22%;
-    --accent-l: 50%;
-    --accent-a: 81%;
+    --accent-h: 198deg;
+    --accent-s: 84%;
+    --accent-l: 52%;
+    --accent-a: 75%;
     --accent-a-solid: 81%;
     --accent: hsla(var(--accent-h), var(--accent-s), var(--accent-l), var(--accent-a));
     --accent-solid: hsla(var(--accent-h), var(--accent-s), var(--accent-l), var(--accent-a-solid));
