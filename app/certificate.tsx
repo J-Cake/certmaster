@@ -3,8 +3,6 @@ import x509 from '@peculiar/x509';
 import {API} from "./main";
 import {Awaited} from "./util";
 import {Job} from "./lib/certmaster";
-import Markdown from "./markdown";
-import {isDns} from "./header";
 
 export interface CertificateViewProps {
 	certificateId?: string

@@ -1,4 +1,4 @@
-:is(dialog, div[popover]) {
+:is(dialog, div[popover], ul[popover]) {
     position: fixed;
 
     padding: var(--spacing-m);
@@ -21,7 +21,7 @@
     font-size: var(--font-size-s);
 }
 
-:is(dialog, div[popover]) > button.close-btn {
+:is(dialog, div[popover], ul[popover]) > button.close-btn {
     position: absolute;
 
     width: var(--spacing-xl);
@@ -31,4 +31,69 @@
 
     top: var(--spacing-m);
     right: var(--spacing-m);
+}
+
+ul[popover].context-menu {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-auto-rows: auto;
+
+    min-width: var(--element-xs);
+
+    border-radius: var(--radius-s);
+
+    grid-column-gap: var(--spacing-xs);
+}
+
+ul[popover].context-menu li:is(.context-menu-item, .context-menu-separator, .context-menu-header) {
+    list-style-type: none;
+    grid-column: 1 / -1;
+
+    padding: var(--spacing-xxs) var(--spacing-s);
+}
+
+ul[popover].context-menu li.context-menu-item {
+    display: grid;
+
+    grid-template-columns: subgrid;
+    grid-template-areas: 'left label right';
+    align-items: center;
+
+    box-sizing: border-box;
+
+    border-radius: var(--radius-s);
+    border: var(--border-dull);
+    border-color: transparent;
+}
+
+ul[popover].context-menu li.context-menu-item .context-menu-item-label {
+    text-align: left;
+}
+
+ul[popover].context-menu li.context-menu-item:hover {
+    border: var(--border-dull);
+    background: var(--background-dull);
+}
+
+ul[popover].context-menu li.context-menu-item .left {
+    grid-area: left;
+}
+
+ul[popover].context-menu li.context-menu-item .right {
+    grid-area: right;
+}
+
+ul[popover].context-menu li.context-menu-separator hr {
+    border: none;
+    border-top: var(--border-dull);
+}
+
+ul[popover].context-menu li.context-menu-header h6 {
+    font-weight: bold;
+    font: var(--font-heading-s);
+    font-size: var(--font-size-s);
+    margin: 0;
+    margin-block: var(--spacing-s);
+    padding: 0;
+    text-align: center;
 }

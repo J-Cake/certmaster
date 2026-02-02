@@ -1,7 +1,7 @@
 import Api from './api';
 import * as x509 from '@peculiar/x509';
 import uri from 'urijs';
-import {isDns} from "../header";
+import {isDns} from "../new-certificate";
 
 export default class CertmasterApi extends Api {
 	constructor(baseUri: uri) {
