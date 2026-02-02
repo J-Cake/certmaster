@@ -1,4 +1,4 @@
-:is(dialog, div[popover], ul[popover]) {
+:is(dialog, div[popover]) {
     position: fixed;
 
     padding: var(--spacing-m);
@@ -21,7 +21,7 @@
     font-size: var(--font-size-s);
 }
 
-:is(dialog, div[popover], ul[popover]) > button.close-btn {
+:is(dialog, div[popover]) > button.close-btn {
     position: absolute;
 
     width: var(--spacing-xl);
@@ -33,26 +33,38 @@
     right: var(--spacing-m);
 }
 
-ul[popover].context-menu {
+dialog.context-menu {
+    inset: unset;
+
     display: grid;
     grid-template-columns: auto 1fr auto;
     grid-auto-rows: auto;
 
     min-width: var(--element-xs);
 
-    border-radius: var(--radius-s);
-
     grid-column-gap: var(--spacing-xs);
+    grid-row-gap: var(--spacing-xxs);
 }
 
-ul[popover].context-menu li:is(.context-menu-item, .context-menu-separator, .context-menu-header) {
+dialog.context-menu::backdrop {
+    position: fixed;
+
+    width: 100vw;
+    height: 100vh;
+}
+
+dialog.context-menu {
+    position: fixed;
+}
+
+dialog.context-menu :is(.context-menu-item, .context-menu-separator, .context-menu-header) {
     list-style-type: none;
     grid-column: 1 / -1;
 
     padding: var(--spacing-xxs) var(--spacing-s);
 }
 
-ul[popover].context-menu li.context-menu-item {
+dialog.context-menu .context-menu-item {
     display: grid;
 
     grid-template-columns: subgrid;
@@ -66,29 +78,30 @@ ul[popover].context-menu li.context-menu-item {
     border-color: transparent;
 }
 
-ul[popover].context-menu li.context-menu-item .context-menu-item-label {
+dialog.context-menu .context-menu-item .context-menu-item-label {
     text-align: left;
 }
 
-ul[popover].context-menu li.context-menu-item:hover {
+dialog.context-menu .context-menu-item:is(:hover, :focus) {
     border: var(--border-dull);
     background: var(--background-dull);
+    outline: none;
 }
 
-ul[popover].context-menu li.context-menu-item .left {
+dialog.context-menu .context-menu-item .left {
     grid-area: left;
 }
 
-ul[popover].context-menu li.context-menu-item .right {
+dialog.context-menu .context-menu-item .right {
     grid-area: right;
 }
 
-ul[popover].context-menu li.context-menu-separator hr {
+dialog.context-menu .context-menu-separator hr {
     border: none;
     border-top: var(--border-dull);
 }
 
-ul[popover].context-menu li.context-menu-header h6 {
+dialog.context-menu .context-menu-header h6 {
     font-weight: bold;
     font: var(--font-heading-s);
     font-size: var(--font-size-s);

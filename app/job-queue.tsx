@@ -10,6 +10,12 @@ export interface QueueProps {
 
 }
 
+interface Cols {
+	'client_id': boolean,
+	'alt_name': boolean,
+	'actions': boolean
+}
+
 export default function JobQueue(props: QueueProps) {
 	const api = React.useContext(API);
 	const [entries, setEntries] = React.useState(50);
@@ -21,7 +27,22 @@ export default function JobQueue(props: QueueProps) {
 		modal.modal(<NewCertificateModal />)
 	}, [modal]);
 
-	const moreContext = React.useCallback((e: React.MouseEvent) => {
+	const [cols, setCols] = React.useState<Cols>({
+		'client_id': false,
+		'alt_name': false,
+		'actions': true
+	});
+
+	React.useEffect(() => {
+		const preference = window.localStorage.getItem('col-preference');
+
+		if (preference)
+			setCols(JSON.parse(preference));
+	}, []);
+
+	React.useEffect(() => window.localStorage.setItem("col-preference", JSON.stringify(cols)), [cols]);
+
+	const moreContext = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
 		modal.context([{
 			label: "Override",
 			left: "\ue8e8"
@@ -33,35 +54,38 @@ export default function JobQueue(props: QueueProps) {
 			left: "\ue8f5"
 		}, "Show Columns", {
 			label: "Client ID",
-			left: false
+			left: cols.client_id,
+			onActivate: () => setCols(cols => ({ ...cols, client_id: !cols.client_id }))
 		}, {
 			label: "Alt Name",
-			left: false
+			left: cols.alt_name,
+			onActivate: () => setCols(cols => ({ ...cols, alt_name: !cols.alt_name }))
 		}, {
 			label: "Actions",
-			left: true
-		}]);
-	}, [modal]);
+			left: cols.actions,
+			onActivate: () => setCols(cols => ({ ...cols, actions: !cols.actions }))
+		}], e.currentTarget.getBoundingClientRect());
+	}, [modal, cols.client_id, cols.alt_name, cols.actions, setCols]);
 
 	return <section id="job-queue">
 		<div className="button-group align-min-centre">
-			{numSelected > 0 ? <>
-				<button className="success" data-icon={"\ue8e8"} title={"Override challenge"}>{"Override"}</button>
-				<button className="danger" data-icon={"\ue5cd"} title={"Decline challenge"}>{"Decline"}</button>
-				<button className="warning" data-icon={"\ue8f5"} title={"Ignore request"}>{"Ignore"}</button>
-			</> : null}
-
 			<button className="primary" data-icon={"\ue145"} onClick={newCertificate}>{"New Certificate"}</button>
 			<button className="secondary" data-icon-after={"\ue5c5"} onClick={e => moreContext(e)}>{"More"}</button>
 		</div>
 
 		<Awaited promise={api.getJobs(entries)} key={"job-queue"}>
-			{queue => <JobQueueInner jobs={queue} onSelectionChange={num => setNumSelected(num)} />}
+			{queue => <JobQueueInner jobs={queue} onSelectionChange={num => setNumSelected(num)} cols={cols} />}
 		</Awaited>
 	</section>;
 }
 
-function JobQueueInner(props: { jobs: Job[], onSelectionChange: (selected: number) => void }) {
+interface JobQueueInnerParams {
+	jobs: Job[];
+	onSelectionChange: (selected: number) => void;
+	cols: Cols
+}
+
+function JobQueueInner(props: JobQueueInnerParams) {
 	const [selected, setSelected] = React.useState<Record<string, boolean>>({});
 	const api = React.useContext(API);
 
@@ -98,10 +122,10 @@ function JobQueueInner(props: { jobs: Job[], onSelectionChange: (selected: numbe
 					<input type={"checkbox"} key={"select-all"} ref={all} />
 				</td>
 				<td>{"CN"}</td>
-				<td>{"ID"}</td>
-				<td>{"Alias"}</td>
+				{props.cols.client_id && <td>{"ID"}</td>}
+				{props.cols.alt_name && <td>{"Alias"}</td>}
 				<td>{"Status"}</td>
-				<td>{"Action"}</td>
+				{props.cols.actions && <td>{"Action"}</td>}
 			</tr>
 			</thead>
 			<tbody>
@@ -114,10 +138,10 @@ function JobQueueInner(props: { jobs: Job[], onSelectionChange: (selected: numbe
 							{ok => <span>{"No data"}</span>}
 						</Awaited>
 					</td>
-					<td>{job.clientId}</td>
-					<td>{job.alias}</td>
+					{props.cols.client_id && <td>{job.clientId}</td>}
+					{props.cols.alt_name && <td>{job.alias}</td>}
 					<td>{typeof job.status == 'string' ? job.status : Object.keys(job.status)[0]}</td>
-					<td>
+					{props.cols.actions && <td>
 						<div className="button-group">
 							<button className="success symbolic" data-icon={"\ue8e8"} title={"Override challenge"}/>
 							<button className="danger symbolic" data-icon={"\ue5cd"} title={"Decline challenge"}/>
@@ -125,7 +149,7 @@ function JobQueueInner(props: { jobs: Job[], onSelectionChange: (selected: numbe
 							<Link to={`/inspect/${encodeURIComponent(job.alias)}`} className="button symbolic"
 								  data-icon={"\ue5cc"} title={"View certificate request"}/>
 						</div>
-					</td>
+					</td>}
 				</tr>)}
 			</tbody>
 		</table>
