@@ -79,6 +79,12 @@ export default class CertmasterApi extends Api {
 	getTracked(): string[] {
 		return JSON.parse(window.localStorage.getItem('tracked-alt-names') || '[]');
 	}
+
+	async override(req: Job[]): Promise<void> {
+		await this.fetchJson("/challenge", "POST", {}, {
+			jobs: req.map(i => i.alias)
+		});
+	}
 }
 
 export const DEFAULT_MAX_JOBS = 50;

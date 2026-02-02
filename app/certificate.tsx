@@ -34,8 +34,8 @@ export function CertificateDetails(props: CertificateDetailsProps) {
 	const api = React.useContext(API);
 
 	const override = React.useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
-		// await api.override();
-	}, [api]);
+		await api.override([props.job]);
+	}, [api, props.job]);
 
 	return <>
 		<div className={"certificate-details"}>
@@ -65,9 +65,9 @@ export function CertificateDetails(props: CertificateDetailsProps) {
 
 			<div className="button-group">
 				<button className="danger" data-icon={"\ue5cd"}
-						onClick={e => override(e)}
 						title={"Inform the issuer of a failed validation and remove the entry from the job queue"}>{"Decline challenge"}</button>
 				<button className="success" data-icon={"\ue8e8"}
+						onClick={e => override(e)}
 						title={"Manually pass certificate challenge and proceed to issuance."}>{"Override Challenge"}</button>
 			</div>
 		</div>
