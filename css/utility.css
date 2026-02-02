@@ -13,6 +13,21 @@
 .padding-v-xl { padding-block: var(--spacing-xl); }
 .padding-v-xxl { padding-block: var(--spacing-xxl); }
 
+.margin-h-xxs { margin-inline: var(--spacing-xxs); }
+.margin-h-xs { margin-inline: var(--spacing-xs); }
+.margin-h-s { margin-inline: var(--spacing-s); }
+.margin-h-m { margin-inline: var(--spacing-m); }
+.margin-h-l { margin-inline: var(--spacing-l); }
+.margin-h-xl { margin-inline: var(--spacing-xl); }
+.margin-h-xxl { margin-inline: var(--spacing-xxl); }
+.margin-v-xxs { margin-block: var(--spacing-xxs); }
+.margin-v-xs { margin-block: var(--spacing-xs); }
+.margin-v-s { margin-block: var(--spacing-s); }
+.margin-v-m { margin-block: var(--spacing-m); }
+.margin-v-l { margin-block: var(--spacing-l); }
+.margin-v-xl { margin-block: var(--spacing-xl); }
+.margin-v-xxl { margin-block: var(--spacing-xxl); }
+
 .max-width-xxs { max-width: var(--element-xxs); }
 .max-width-xs { max-width: var(--element-xs); }
 .max-width-s { max-width: var(--element-s); }

@@ -14,9 +14,10 @@ services:
       - '443:443'
       - '443:443/udp'
     volumes:
-      - "./build:/www"
-      - "data:/data"
-      - "./Caddyfile:/config/Caddyfile"
+      - ./build:/www
+      - ./help:/www/help
+      - data:/data
+      - ./Caddyfile:/config/Caddyfile
     command: ["caddy", "run", "-c", "/config/Caddyfile"]
     networks:
       - certmaster
@@ -36,12 +37,13 @@ services:
       target: 'certmaster'
     container_name: 'certmaster'
     restart: unless-stopped
+    entrypoint: "certmaster"
     command: ["-c", "/etc/certmaster/docker.toml"]
     environment:
       RUST_LOG: "certmaster=trace,common=trace,info"
       RUST_BACKTRACE: 1
     volumes:
-      - "test:/etc/certmaster"
+      - test:/etc/certmaster
     networks:
       - certmaster
 
@@ -51,7 +53,7 @@ services:
       target: 'certmaster'
     container_name: 'api'
     restart: unless-stopped
-    entrypoint: "/bin/web"
+    entrypoint: "web"
     command: ["-c", "/etc/certmaster/docker.toml"]
     environment:
       RUST_LOG: "certmaster=trace,common=trace,web=trace,info"
@@ -59,7 +61,7 @@ services:
     ports:
       - "9999:9999"
     volumes:
-      - "test:/etc/certmaster"
+      - test:/etc/certmaster
     networks:
       - certmaster
 

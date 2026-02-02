@@ -13,7 +13,7 @@ await esbuild.build({
 	outdir: 'build',
 	sourcemap: !prod,
 	minify: prod,
-	treeShaking: prod,
+	treeShaking: true,//prod, // Disabling tree shaking stops x509 from working for some fucking reason
 	plugins: [
 		{name: 'scoped-css', setup(build) {
 			build.onResolve({ filter: /\.css\?raw$/ }, async args => {

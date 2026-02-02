@@ -46,7 +46,7 @@ export default function Router(props: { config: RouterConfig, children?: React.R
 		}
 
 		return null;
-	}, [url, props.config]);
+	}, [url, props.config, base]);
 
 	return <RouterContext.Provider value={{url, navigate, page}}>
 		{props.children}

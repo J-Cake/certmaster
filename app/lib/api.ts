@@ -1,9 +1,9 @@
 import uri from 'urijs';
 
-export abstract class Api {
+export default abstract class Api {
 	readonly #baseUri: uri;
 
-	protected constructor(baseUri: uri) {
+	constructor(baseUri: uri) {
 		this.#baseUri = baseUri;
 	}
 
@@ -11,14 +11,18 @@ export abstract class Api {
 		return uri(this.#baseUri.toString());
 	}
 
-	private async fetch(endpoint: string | uri | URL, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', headers: Record<string, string> = {}, body?: any): Promise<Response> {
-		const endpoint_parsed = uri(endpoint)
-		const url = endpoint instanceof URL ? endpoint : (typeof endpoint == 'string' ? new URL(this
+	concatUris(endpoint: string | uri | URL): URL {
+		const endpoint_parsed = uri(endpoint);
+		return endpoint instanceof URL ? endpoint : (typeof endpoint == 'string' ? new URL(this
 			.baseUri
 			.path(`${this.baseUri.pathname()}/./${endpoint_parsed.path()}`)
 			.query(endpoint_parsed.query(true))
 			.normalizePathname()
 			.toString()) : new URL(endpoint.toString()));
+	}
+
+	private async fetch(endpoint: string | uri | URL, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', headers: Record<string, string> = {}, body?: any): Promise<Response> {
+		const url = this.concatUris(endpoint);
 
 		return await fetch(url, {
 			method,
@@ -48,7 +52,7 @@ export abstract class Api {
 			.then(res => res.text());
 	}
 
-	async fetchJson(endpoint: string | uri | URL, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', headers: Record<string, string> = {}, body?: any): Promise<any> {
+	async fetchJson<Response = any>(endpoint: string | uri | URL, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', headers: Record<string, string> = {}, body?: any): Promise<Response> {
 		return await this.fetch(endpoint, method, Object.assign({}, headers, {
 			'content-type': 'application/json',
 			'accept': 'application/json'
@@ -57,45 +61,19 @@ export abstract class Api {
 	}
 }
 
-export default class CertmasterApi extends Api {
-	constructor(baseUri: uri) {
-		super(baseUri);
+export class CacheCell<T> {
+	#cached: T;
+	#lastRefresh: Date;
+
+	constructor(private refresh: () => Promise<T>, private refreshIntervalSeconds = 30) {
+		this.#cached = null as any;
+		this.#lastRefresh = new Date("1970-01-01 00:00:00");
 	}
 
-	async version(): Promise<ApiVersion> {
-		return this.fetchJson("/version")
-	}
+	async get(): Promise<T> {
+		if ((new Date().getTime() - this.#lastRefresh.getTime()) > this.refreshIntervalSeconds * 1000)
+			this.#cached = await this.refresh();
 
-	async getJobs(max: number = DEFAULT_MAX_JOBS): Promise<Job[]> {
-		return this.fetchJson(`/jobs?${new URLSearchParams({ jobs: max.toString() })}`)
-			.then(res => res.jobs)
-	}
-
-	async getJobById(id: string): Promise<Job> {
-		return this.fetchJson(`/job?${new URLSearchParams({ jobs: id })}`)
+		return this.#cached;
 	}
 }
-
-export const DEFAULT_MAX_JOBS = 50;
-
-export interface ApiVersion {
-	"service": string,
-	"success": boolean,
-	"version": string
-}
-
-export interface Job {
-	clientId: string,
-	alias: string,
-	pem: string,
-	status: JobStatus
-}
-
-export type JobStatus =
-	"Pending" |
-	"ChallengePending" |
-	"ChallengePassed" |
-	{ "ChallengeFailed": { "reason": string } } |
-	"Finished" |
-	{ "SigningError": { "reason": string } } |
-	"Stale"

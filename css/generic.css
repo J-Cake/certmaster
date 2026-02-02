@@ -62,3 +62,14 @@ blockquote:is(.success, .warning, .error, .info):before {
     vertical-align: sub;
     margin-inline: var(--spacing-s);
 }
+
+fieldset {
+    border: var(--border-dull);
+    border-radius: var(--radius-s);
+    padding: var(--spacing-m);
+}
+
+fieldset > legend {
+    background: var(--background);
+    padding: var(--spacing-s) var(--spacing-m);
+}

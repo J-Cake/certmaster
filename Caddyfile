@@ -1,4 +1,26 @@
 localhost {
+    root * /www
+
+    # Check for help articles
+    @help {
+          path /help/*
+          header Accept *application/json*
+    }
+
+    handle @help {
+        file_server browse
+    }
+
+    # Check for help articles
+    @help_articles {
+          path /help/*
+          header Accept *text/markdown*
+    }
+
+    handle @help_articles {
+        file_server browse
+    }
+
     # API routes
     handle_path /api/* {
         reverse_proxy api:9999
@@ -11,15 +33,10 @@ localhost {
         }
 
         handle @notAPI {
-            root * /www
             try_files {path} /
             file_server
         }
     }
 
     tls internal
-
-    @http3 {
-        protocol h3
-    }
 }

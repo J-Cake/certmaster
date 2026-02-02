@@ -1,13 +1,23 @@
 span.capsule {
     display: inline;
     padding: 0 var(--spacing-s);
-    border-radius: var(--radius-s);
+    border-radius: 1em;
 
-    font-size: var(--font-size-xs);
+    font-size: 0.5em;
     text-decoration: none;
 
     margin-inline: var(--spacing-xs);
 
     background: var(--background-03);
     color: var(--foreground-03);
+
+    font-variant: small-caps;
+}
+
+a.help-icon {
+    font: var(--font-article);
+    font-size: var(--font-size-s);
+    color: var(--foreground);
+
+    margin: var(--spacing-xs);
 }

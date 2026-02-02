@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+use std::vec::IntoIter;
 use actix_cors::Cors;
 use actix_web::HttpResponse;
 use actix_web::middleware::Identity;
@@ -5,6 +7,7 @@ use actix_web::web;
 use common::Result;
 use common::{JobProgress, JobStatus, RedisUtils};
 use redis::AsyncCommands;
+use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -108,14 +111,23 @@ pub async fn get_jobs(pagination: web::Query<Pagination>) -> actix_web::Result<H
 
 #[derive(Serialize, Deserialize)]
 pub struct Selection {
-    jobs: Vec<String>,
+    jobs: JobList,
+}
+
+impl Selection {
+    fn jobs(&self) -> Vec<&String> {
+        match self.jobs {
+            JobList::Many(ref jobs) => jobs.iter().collect::<Vec<&String>>(),
+            JobList::One(ref job) => vec![job]
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum SingleOrCollection<'a, T: Serialize + Deserialize<'a>> {
-    One(T),
-    Many(Vec<T>)
+pub enum JobList {
+    Many(Vec<String>),
+    One(String)
 }
 
 #[actix_web::get("/job")]
@@ -123,7 +135,7 @@ pub async fn get_job(id: web::Query<Selection>) -> actix_web::Result<HttpRespons
     let config = common::get_config();
     let mut redis = config.redis.connect().await;
 
-    let alias = match common::RedisUtils::get_jobs_by_alias(&mut redis, id.jobs.iter()).await {
+    let alias = match common::RedisUtils::get_jobs_by_alias(&mut redis, id.jobs().iter()).await {
         Ok(job_by_alias) => job_by_alias
             .into_iter()
             .map(|i| format!("csr:{id}", id = i.serial))
@@ -199,7 +211,7 @@ pub async fn post_challenge(id: web::Json<Selection>) -> actix_web::Result<HttpR
     let config = common::get_config();
     let mut redis = config.redis.connect().await;
 
-    match common::RedisUtils::get_jobs_by_alias(&mut redis, id.jobs.iter()).await {
+    match common::RedisUtils::get_jobs_by_alias(&mut redis, id.jobs().iter()).await {
         Ok(job_by_alias) => {
             for id in job_by_alias {
                 if let Err(err) = redis
@@ -228,6 +240,6 @@ pub async fn post_challenge(id: web::Json<Selection>) -> actix_web::Result<HttpR
 
     Ok(HttpResponse::Ok().json(serde_json::json! {{
         "success": true,
-        "jobs": id.jobs.clone()
+        "jobs": id.jobs()
     }}))
 }
