@@ -1,15 +1,14 @@
-use std::marker::PhantomData;
-use std::vec::IntoIter;
 use actix_cors::Cors;
-use actix_web::HttpResponse;
-use actix_web::middleware::Identity;
 use actix_web::web;
+use actix_web::HttpResponse;
+use common::JobProgress;
+use common::JobStatus;
+use common::RedisUtils;
 use common::Result;
-use common::{JobProgress, JobStatus, RedisUtils};
 use redis::AsyncCommands;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
+use std::cell::LazyCell;
 
 const DEFAULT_PAGE_SIZE: usize = 100;
 
@@ -20,10 +19,7 @@ pub async fn main() -> Result<()> {
     let config = common::read_config().await;
 
     actix_web::HttpServer::new(|| {
-        let cors = Cors::default()
-            .allow_any_header()
-            .allow_any_method()
-            .allow_any_origin();
+        let cors = Cors::default().allow_any_header().allow_any_method().allow_any_origin();
 
         actix_web::App::new()
             .wrap(cors)
@@ -43,12 +39,11 @@ pub async fn main() -> Result<()> {
 
 #[actix_web::get("/version")]
 pub async fn get_version() -> HttpResponse {
-    HttpResponse::Ok()
-        .json(serde_json::json! {{
-            "success": true,
-            "service": "certmaster-api",
-            "version": env!("CARGO_PKG_VERSION").to_string(),
-        }})
+    HttpResponse::Ok().json(serde_json::json! {{
+        "success": true,
+        "service": "certmaster-api",
+        "version": env!("CARGO_PKG_VERSION").to_string(),
+    }})
 }
 
 #[derive(Serialize, Deserialize)]
@@ -56,7 +51,14 @@ pub struct Pagination {
     page: Option<usize>,
     page_size: Option<usize>,
     cn: Option<bool>,
+}
 
+#[derive(Serialize, Deserialize)]
+pub struct DetailedCsr {
+    #[serde(flatten)]
+    csr: common::Csr,
+
+    cn: Option<String>,
 }
 
 #[actix_web::get("/get-enqueued-items")]
@@ -68,34 +70,47 @@ pub async fn get_jobs(pagination: web::Query<Pagination>) -> actix_web::Result<H
     let size = pagination.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
 
     let get_jobs: Vec<String> = match redis
-        .zrevrange(
-            &config.redis.job_list_key,
-            (page * size) as isize,
-            ((page + 1) * (size - 1)) as isize,
-        )
+        .zrevrange(&config.redis.job_list_key, (page * size) as isize, ((page + 1) * (size - 1)) as isize)
         .await
     {
         Ok(job_list) => job_list,
         Err(err) => {
-            return Ok(
-                HttpResponse::InternalServerError().json(serde_json::json! {{
-                    "success": false,
-                    "error": err.to_string(),
-                }}),
-            );
+            return Ok(HttpResponse::InternalServerError().json(serde_json::json! {{
+                "success": false,
+                "error": err.to_string(),
+            }}));
         }
     };
 
     if !get_jobs.is_empty() {
-        let values: Vec<common::Csr> = match redis.mget(&get_jobs).await {
-            Ok(values) => values,
+        let values = match redis.mget::<_, Vec<common::Csr>>(&get_jobs).await {
+            Ok(values) => values
+                .into_iter()
+                .map(|csr| {
+                    let decoded = LazyCell::new(|| rcgen::CertificateSigningRequestParams::from_pem(csr.pem())
+                        .ok()
+                        .map(|csr| csr.params));
+
+                    DetailedCsr {
+                        cn: pagination.cn.is_some_and(|i| i).then(|| {
+                            decoded.as_ref()
+                                .and_then(|i| i.distinguished_name
+                                    .get(&rcgen::DnType::CommonName)
+                                    .and_then(|i| match i {
+                                        rcgen::DnValue::Utf8String(str) => Some(str.clone()),
+                                        rcgen::DnValue::PrintableString(str) => Some(str.to_string()),
+                                        _ => None
+                                    }))
+                        }).flatten(),
+                        csr,
+                    }
+                })
+                .collect::<Vec<_>>(),
             Err(err) => {
-                return Ok(
-                    HttpResponse::InternalServerError().json(serde_json::json! {{
-                        "success": false,
-                        "error": err.to_string(),
-                    }}),
-                );
+                return Ok(HttpResponse::InternalServerError().json(serde_json::json! {{
+                    "success": false,
+                    "error": err.to_string(),
+                }}));
             }
         };
 
@@ -111,16 +126,18 @@ pub async fn get_jobs(pagination: web::Query<Pagination>) -> actix_web::Result<H
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Selection {
-    jobs: String
+    jobs: String,
 }
 
 impl Selection {
-    fn jobs(&self) -> std::result::Result<Vec<String>, serde_urlencoded::de::Error> {
-        self.jobs.split('+')
-            .map(|id| serde_urlencoded::from_str::<String>(id))
-            .collect::<std::result::Result<Vec<String>, serde_urlencoded::de::Error>>()
+    fn jobs(&self) -> std::result::Result<Vec<String>, std::str::Utf8Error> {
+        self.jobs
+            .split('+')
+            .map(|id| percent_encoding::percent_decode_str(id).decode_utf8())
+            .map(|i| i.map(|i| i.to_string()))
+            .collect::<std::result::Result<Vec<_>, std::str::Utf8Error>>()
     }
 }
 
@@ -131,11 +148,11 @@ pub async fn get_job(id: web::Query<Selection>) -> actix_web::Result<HttpRespons
 
     let jobs = match id.jobs() {
         Ok(jobs) => jobs,
-        Err(err) => return Ok(HttpResponse::BadRequest()
-            .json(serde_json::json! {{
+        Err(err) =>
+            return Ok(HttpResponse::BadRequest().json(serde_json::json! {{
                 "success": false,
                 "error": err.to_string()
-            }}))
+            }})),
     };
 
     let alias = match common::RedisUtils::get_jobs_by_alias(&mut redis, jobs.iter()).await {
@@ -190,12 +207,10 @@ pub async fn post_job(requests: web::Json<Vec<common::NewCsr>>) -> actix_web::Re
         match redis.dispatch_event(request.clone()).await {
             Ok(()) => (),
             Err(err) => {
-                return Ok(
-                    HttpResponse::InternalServerError().json(serde_json::json! {{
-                        "success": false,
-                        "error": err.to_string(),
-                    }}),
-                );
+                return Ok(HttpResponse::InternalServerError().json(serde_json::json! {{
+                    "success": false,
+                    "error": err.to_string(),
+                }}));
             }
         };
     }
@@ -209,22 +224,18 @@ pub async fn post_job(requests: web::Json<Vec<common::NewCsr>>) -> actix_web::Re
     }}))
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OverrideChallenge {
+    jobs: Vec<String>,
+}
+
 #[actix_web::post("/challenge")]
-pub async fn post_challenge(id: web::Json<Selection>) -> actix_web::Result<HttpResponse> {
+pub async fn post_challenge(id: web::Json<OverrideChallenge>) -> actix_web::Result<HttpResponse> {
     let config = common::get_config();
     let mut redis = config.redis.connect().await;
 
-    let jobs = match id.jobs() {
-        Ok(jobs) => jobs,
-        Err(err) => return Ok(HttpResponse::BadRequest()
-            .json(serde_json::json! {{
-                "success": false,
-                "error": err.to_string()
-            }}))
-    };
-
-    match common::RedisUtils::get_jobs_by_alias(&mut redis, jobs.iter()).await {
-        Ok(job_by_alias) => {
+    match common::RedisUtils::get_jobs_by_alias(&mut redis, id.jobs.iter()).await {
+        Ok(job_by_alias) =>
             for id in job_by_alias {
                 if let Err(err) = redis
                     .dispatch_event(JobProgress {
@@ -233,15 +244,12 @@ pub async fn post_challenge(id: web::Json<Selection>) -> actix_web::Result<HttpR
                     })
                     .await
                 {
-                    return Ok(
-                        HttpResponse::InternalServerError().json(serde_json::json! {{
-                            "success": false,
-                            "error": err.to_string(),
-                        }}),
-                    );
+                    return Ok(HttpResponse::InternalServerError().json(serde_json::json! {{
+                        "success": false,
+                        "error": err.to_string(),
+                    }}));
                 }
-            }
-        }
+            },
         Err(err) => {
             return Ok(HttpResponse::NotFound().json(serde_json::json! {{
                 "success": false,
@@ -252,6 +260,6 @@ pub async fn post_challenge(id: web::Json<Selection>) -> actix_web::Result<HttpR
 
     Ok(HttpResponse::Ok().json(serde_json::json! {{
         "success": true,
-        "jobs": jobs
+        "jobs": id.jobs
     }}))
 }

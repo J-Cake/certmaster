@@ -12,16 +12,16 @@ export default class CertmasterApi extends Api {
 		return this.fetchJson("/version")
 	}
 
-	async getJobs(max: number = 50): Promise<Job[]> {
+	async getItems(max: number = 50): Promise<Job[]> {
 		if (this.getTracked().length <= 0)
 			return [];
 
-		return this.fetchJson(`/jobs?max=${max}`)
+		return this.fetchJson(`/get-enqueued-items?max=${max}&cn=true`)
 			.then(res => res.jobs)
 	}
 
 	async getJobById(id: string | string[]): Promise<{ csr: x509.Pkcs10CertificateRequest, job: Job }[]> {
-		return this.fetchJson<{ jobs: Job[] }>(`/job?jobs=${[id].flat().map(i => encodeURIComponent(i)).join('+')}`)
+		return this.fetchJson<{ jobs: Job[] }>(`/job?jobs=${[id].flat().map(i => encodeURIComponent(encodeURIComponent(i))).join('+')}`)
 			.then(res => res.jobs.map(job => {
 				const csr = new x509.Pkcs10CertificateRequest(job.pem);
 
@@ -99,7 +99,8 @@ export interface Job {
 	clientId: string,
 	alias: string,
 	pem: string,
-	status: JobStatus
+	status: JobStatus,
+	cn?: string
 }
 
 export type JobStatus =

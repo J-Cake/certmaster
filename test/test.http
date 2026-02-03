@@ -2,7 +2,7 @@
 GET http://localhost:9999/version
 
 ### List all jobs
-GET http://localhost:9999/jobs
+GET http://localhost:9999/get-enqueued-items
 
 ### Submit a new CSR to the queue
 POST http://localhost:9999/job

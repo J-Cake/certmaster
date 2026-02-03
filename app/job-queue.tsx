@@ -70,10 +70,10 @@ export default function JobQueue(props: QueueProps) {
 	return <section id="job-queue">
 		<div className="button-group align-min-centre">
 			<button className="primary" data-icon={"\ue145"} onClick={newCertificate}>{"New Certificate"}</button>
-			<button className="secondary" data-icon-after={"\ue5c5"} onClick={e => moreContext(e)}>{"More"}</button>
+			<button className="secondary" data-icon={"\ue8b8"} data-icon-after={"\ue5c5"} onClick={e => moreContext(e)}>{"More"}</button>
 		</div>
 
-		<Awaited promise={api.getJobs(entries)} key={"job-queue"}>
+		<Awaited promise={api.getItems(entries)} key={"job-queue"}>
 			{queue => <JobQueueInner jobs={queue} onSelectionChange={num => setNumSelected(num)} cols={cols} />}
 		</Awaited>
 	</section>;
@@ -134,9 +134,10 @@ function JobQueueInner(props: JobQueueInnerParams) {
 						<input type={"checkbox"} checked={selected[job.clientId]} onChange={e => setSelected(prev => ({ ...prev, [job.clientId]: e.target.checked }))}/>
 					</td>
 					<td>
-						<Awaited promise={api.getJobById(job.alias)} alt={<span>{"No data"}</span>}>
-							{ok => <span>{"No data"}</span>}
-						</Awaited>
+						{job.cn}
+						{/*<Awaited promise={api.getJobById(job.alias)} alt={<span>{"No data"}</span>}>*/}
+						{/*	{ok => <span>{"No data"}</span>}*/}
+						{/*</Awaited>*/}
 					</td>
 					{props.cols.client_id && <td>{job.clientId}</td>}
 					{props.cols.alt_name && <td>{job.alias}</td>}
