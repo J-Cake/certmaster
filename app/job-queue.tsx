@@ -134,7 +134,7 @@ function JobQueueInner(props: JobQueueInnerParams) {
 						<input type={"checkbox"} checked={selected[job.clientId]} onChange={e => setSelected(prev => ({ ...prev, [job.clientId]: e.target.checked }))}/>
 					</td>
 					<td>
-						<Awaited promise={api.getJobById(job.clientId)} alt={<span>{"No data"}</span>}>
+						<Awaited promise={api.getJobById(job.alias)} alt={<span>{"No data"}</span>}>
 							{ok => <span>{"No data"}</span>}
 						</Awaited>
 					</td>

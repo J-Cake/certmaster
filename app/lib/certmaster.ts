@@ -20,8 +20,8 @@ export default class CertmasterApi extends Api {
 			.then(res => res.jobs)
 	}
 
-	async getJobById(id: string): Promise<{ csr: x509.Pkcs10CertificateRequest, job: Job }[]> {
-		return this.fetchJson<{ jobs: Job[] }>(`/job?${new URLSearchParams({jobs: id})}`)
+	async getJobById(id: string | string[]): Promise<{ csr: x509.Pkcs10CertificateRequest, job: Job }[]> {
+		return this.fetchJson<{ jobs: Job[] }>(`/job?jobs=${[id].flat().map(i => encodeURIComponent(i)).join('+')}`)
 			.then(res => res.jobs.map(job => {
 				const csr = new x509.Pkcs10CertificateRequest(job.pem);
 

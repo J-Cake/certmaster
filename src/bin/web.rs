@@ -55,9 +55,11 @@ pub async fn get_version() -> HttpResponse {
 pub struct Pagination {
     page: Option<usize>,
     page_size: Option<usize>,
+    cn: Option<bool>,
+
 }
 
-#[actix_web::get("/jobs")]
+#[actix_web::get("/get-enqueued-items")]
 pub async fn get_jobs(pagination: web::Query<Pagination>) -> actix_web::Result<HttpResponse> {
     let config = common::get_config();
     let mut redis = config.redis.connect().await;
@@ -111,23 +113,15 @@ pub async fn get_jobs(pagination: web::Query<Pagination>) -> actix_web::Result<H
 
 #[derive(Serialize, Deserialize)]
 pub struct Selection {
-    jobs: JobList,
+    jobs: String
 }
 
 impl Selection {
-    fn jobs(&self) -> Vec<&String> {
-        match self.jobs {
-            JobList::Many(ref jobs) => jobs.iter().collect::<Vec<&String>>(),
-            JobList::One(ref job) => vec![job]
-        }
+    fn jobs(&self) -> std::result::Result<Vec<String>, serde_urlencoded::de::Error> {
+        self.jobs.split('+')
+            .map(|id| serde_urlencoded::from_str::<String>(id))
+            .collect::<std::result::Result<Vec<String>, serde_urlencoded::de::Error>>()
     }
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum JobList {
-    Many(Vec<String>),
-    One(String)
 }
 
 #[actix_web::get("/job")]
@@ -135,7 +129,16 @@ pub async fn get_job(id: web::Query<Selection>) -> actix_web::Result<HttpRespons
     let config = common::get_config();
     let mut redis = config.redis.connect().await;
 
-    let alias = match common::RedisUtils::get_jobs_by_alias(&mut redis, id.jobs().iter()).await {
+    let jobs = match id.jobs() {
+        Ok(jobs) => jobs,
+        Err(err) => return Ok(HttpResponse::BadRequest()
+            .json(serde_json::json! {{
+                "success": false,
+                "error": err.to_string()
+            }}))
+    };
+
+    let alias = match common::RedisUtils::get_jobs_by_alias(&mut redis, jobs.iter()).await {
         Ok(job_by_alias) => job_by_alias
             .into_iter()
             .map(|i| format!("csr:{id}", id = i.serial))
@@ -211,7 +214,16 @@ pub async fn post_challenge(id: web::Json<Selection>) -> actix_web::Result<HttpR
     let config = common::get_config();
     let mut redis = config.redis.connect().await;
 
-    match common::RedisUtils::get_jobs_by_alias(&mut redis, id.jobs().iter()).await {
+    let jobs = match id.jobs() {
+        Ok(jobs) => jobs,
+        Err(err) => return Ok(HttpResponse::BadRequest()
+            .json(serde_json::json! {{
+                "success": false,
+                "error": err.to_string()
+            }}))
+    };
+
+    match common::RedisUtils::get_jobs_by_alias(&mut redis, jobs.iter()).await {
         Ok(job_by_alias) => {
             for id in job_by_alias {
                 if let Err(err) = redis
@@ -240,6 +252,6 @@ pub async fn post_challenge(id: web::Json<Selection>) -> actix_web::Result<HttpR
 
     Ok(HttpResponse::Ok().json(serde_json::json! {{
         "success": true,
-        "jobs": id.jobs()
+        "jobs": jobs
     }}))
 }
