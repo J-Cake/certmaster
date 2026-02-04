@@ -1,8 +1,7 @@
-import x509 from "@peculiar/x509";
 import React from "react";
-import Markdown from "./markdown";
+import x509 from "@peculiar/x509";
 
-import {topLevelModal} from "./modal";
+import Markdown from "./markdown";
 import {Link} from "./router";
 import Form from "./form";
 import {API} from "./main";
@@ -15,12 +14,23 @@ Note that wildcard certificates are _technically_ valid, but no explicit support
 Your mileage may vary.			
 `;
 
-export default function NewCertificateModal() {
+interface NewCertificateForm {
+	hostname: string | string[],
+	subject: string,
+	usages: x509.KeyUsageFlags[]
+}
+
+export default function NewCertificateModal(props: { close: () => void }) {
 	const api = React.useContext(API);
 	const [names, setNames] = React.useState([""]);
 	const [subject, setSubject] = React.useState("CN=");
 
-	return <Form<{ hostname: string | string[], subject: string, usages: x509.KeyUsageFlags[] }> onSubmit={res => api.newCertificateRequest(res)}>
+	const onSubmit = React.useCallback(async (res: NewCertificateForm) => {
+		await api.newCertificateRequest(res);
+		props.close();
+	}, [api, props])
+
+	return <Form<NewCertificateForm> onSubmit={res => onSubmit(res)}>
 		<h1>
 			{"New Certificate"}
 			<Link to="/help/new-certificate" data-icon={"\ue887"} className="help-icon" />
@@ -52,7 +62,7 @@ export default function NewCertificateModal() {
 		</fieldset>
 
 		<div className={"flex-h align-maj-end gap-xs"}>
-			<button className="tertiary">{"Cancel"}</button>
+			<button className="tertiary" type="button" onClick={() => props.close()}>{"Cancel"}</button>
 			<button className="success" data-icon={"\ue86c"} type="submit">{"Create"}</button>
 		</div>
 	</Form>

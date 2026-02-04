@@ -1,9 +1,9 @@
 span.capsule {
     display: inline;
     padding: 0 var(--spacing-s);
-    border-radius: 1em;
+    border-radius: var(--font-size-s);
 
-    font-size: 0.5em;
+    font-size: var(--font-size-s);
     text-decoration: none;
 
     margin-inline: var(--spacing-xs);
@@ -12,6 +12,26 @@ span.capsule {
     color: var(--foreground-03);
 
     font-variant: small-caps;
+}
+
+span.capsule.grey {
+    background: var(--background-03);
+    color: var(--foreground-03);
+}
+
+span.capsule.red {
+    background: var(--red);
+    color: var(--foreground);
+}
+
+span.capsule.blue {
+    background: var(--blue);
+    color: var(--foreground);
+}
+
+span.capsule.green {
+    background: var(--green);
+    color: var(--foreground);
 }
 
 a.help-icon {

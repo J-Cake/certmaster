@@ -14,8 +14,10 @@
     border-radius: var(--radius-l);
     box-shadow: var(--shadow-l);
 
+    --foreground: var(--foreground-04);
+
     border: var(--border-dull);
-    border-color: var(--background-02);
+    /*border-color: var(--background-02);*/
     color: var(--foreground-secondary);
 
     font-size: var(--font-size-s);

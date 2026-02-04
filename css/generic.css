@@ -64,7 +64,7 @@ blockquote:is(.success, .warning, .error, .info):before {
 }
 
 fieldset {
-    border: var(--border-dull);
+    border: var(--border-simple);
     border-radius: var(--radius-s);
     padding: var(--spacing-m);
 }

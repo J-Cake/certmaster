@@ -17,8 +17,10 @@ export type RadioBox = { name: string, checked: boolean };
 export type Shortcut = string;
 export type Submenu = MenuItem[];
 
+export type CloseFn = () => void;
+
 export interface ModalProvider {
-	modal(body: React.ReactNode): void;
+	modal(body: React.ReactNode): CloseFn;
 
 	notice(body: React.ReactNode): void;
 
@@ -38,12 +40,16 @@ export default function ModalProvider(props: { children: React.ReactNode }) {
 
 	return <topLevelModal.Provider value={{
 		modal(content: React.ReactNode) {
+			const {portal, close} = createModal(content, {
+				onClose: portal => setModals(modals => modals.filter(m => m !== portal))
+			});
+
 			setModals(modals => [
 				...modals,
-				createModal(content, {
-					onClose: portal => setModals(modals => modals.filter(m => m !== portal))
-				})
+				portal
 			]);
+
+			return close;
 		},
 		notice(content: React.ReactNode) {
 			setNotices(notices => [
@@ -73,7 +79,7 @@ export default function ModalProvider(props: { children: React.ReactNode }) {
 	</topLevelModal.Provider>
 }
 
-export function createModal(content: React.ReactNode, options?: { onClose?: (portal: Portal) => void }): Portal {
+export function createModal(content: React.ReactNode, options?: { onClose?: (portal: Portal) => void }): { portal: Portal, close: CloseFn } {
 	const container = document
 		.querySelector('#modals')!
 		.appendChild(document.createElement('dialog'));
@@ -85,12 +91,14 @@ export function createModal(content: React.ReactNode, options?: { onClose?: (por
 
 	container.showModal();
 
-	container.addEventListener('close', () => {
+	const close: CloseFn = () => {
 		container.remove();
 		options?.onClose?.(portal);
-	});
+	}
 
-	return portal;
+	container.addEventListener('close', () => close());
+
+	return {portal, close};
 }
 
 export function createNotice(content: React.ReactNode, options: { onClose: (portal: Portal) => void }): Portal {

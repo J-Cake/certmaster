@@ -26,7 +26,7 @@
     --lightness-d: 25%;
     --lightness-m: 50%;
     --lightness-b: 75%;
-    --lightness-xb: 90%;
+    --lightness-xb: 85%;
     --lightness-xxb: 100%;
 
     --radius-xxs: var(--spacing-xxs);
@@ -96,13 +96,13 @@
     --font-article: var(--font-size-m) var(--font);
 
     --foreground: var(--foreground-01);
-    --background: var(--background-01);
+    --background: var(--background-02);
 
     --foreground-secondary: var(--foreground-03);
-    --background-secondary: var(--background-01);
+    --background-secondary: var(--background-03);
 
     --foreground-accent: var(--foreground-07);
-    --background-accent: var(--background-01);
+    --background-accent: var(--background-02);
 
     /* Theme Values */
 
@@ -128,7 +128,7 @@
     --orange: #e3c39dcf;
     --orange-solid: #e3c39dff;
 
-    --border-simple: var(--spacing-xxs) solid var(--foreground-03);
+    --border-simple: 2px solid var(--foreground-03);
     --border-dull: 1px solid var(--foreground-05);
     --border-accent: 3px solid var(--accent);
 
@@ -168,7 +168,7 @@
         --background-07: var(--shade-01);
         --foreground-07: var(--shade-07);
 
-        --background: var(--background-01);
+        --background: var(--background-02);
         --background-dull: rgba(0, 0, 0, 0.015);
 
         /* A factor used to alter a value under certain conditions */
@@ -203,7 +203,7 @@
         --background-07: var(--shade-07);
         --foreground-07: var(--shade-01);
 
-        --background: var(--background-01);
+        --background: var(--background-02);
         --background-dull: rgba(255, 255, 255, 0.05);
 
         /* A factor used to alter a value under certain conditions */

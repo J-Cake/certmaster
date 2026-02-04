@@ -16,6 +16,7 @@
 
     font: var(--font-m);
 
+    box-sizing: border-box;
     padding: 0;
     margin: 0;
 
@@ -35,6 +36,9 @@
 
     grid-template-rows: auto 1fr auto;
     grid-template-columns: auto 1fr auto;
+
+    padding: var(--spacing-s);
+    grid-gap: var(--spacing-s);
 
     grid-template-areas:
         "header header header"
@@ -79,4 +83,14 @@
 #status-left, #status-centre, #status-right {
     display: flex;
     justify-content: center;
+}
+
+#queue .job-queue-item:is(:focus, :hover) {
+    cursor: pointer;
+
+    box-sizing: content-box;
+    overflow: visible;
+
+    outline: var(--border-accent);
+    border-radius: var(--radius-s);
 }

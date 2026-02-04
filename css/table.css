@@ -1,4 +1,4 @@
-table {
+table, div.grid-table {
     width: 100%;
 
     border-collapse: collapse;
@@ -6,7 +6,7 @@ table {
     margin-block: var(--spacing-m);
 }
 
-thead, thead tr, thead th {
+thead, thead tr, thead th, div.grid-table-row, div.grid-table-cell {
     /*background: var(--background-03);*/
     color: var(--foreground-secondary);
 
@@ -21,11 +21,34 @@ th:not(:last-child) {
     border-right: var(--border-dull);
 }
 
-th, td {
+th, td, div.grid-table-cell {
     padding: var(--spacing-s) var(--spacing-m);
     white-space: nowrap;
 }
 
 tr:nth-child(even) {
     background: var(--background-dull);
+}
+
+div.grid-table {
+    display: grid;
+
+    grid-auto-columns: auto;
+    grid-auto-rows: auto;
+}
+
+div.grid-table-tbody, div.grid-table-thead {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+}
+
+div.grid-table-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+}
+
+div.grid-table-cell {
+    grid-row: 1;
 }
