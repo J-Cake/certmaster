@@ -3,21 +3,23 @@ import x509 from '@peculiar/x509';
 import {API} from "./main";
 import {Awaited} from "./util";
 import {Job} from "./lib/certmaster";
+import {topLevelModal} from "./modal";
 
 export interface CertificateViewProps {
-	certificateId?: string
+	alias?: string
 }
 
 export default function Certificate(props: CertificateViewProps) {
 	const api = React.useContext(API);
+	const modal = React.useContext(topLevelModal);
 
-	if (!props.certificateId)
+	if (!props.alias)
 		return <div>
 			<h1>{"No certificate selected"}</h1>
 			<p></p>
 		</div>;
 
-	return <Awaited promise={api.getJobById(decodeURIComponent(props.certificateId))}>
+	return <Awaited promise={api.getJobById(decodeURIComponent(props.alias))}>
 		{jobs => <div id="certificate-details-view">
 			{jobs.map(({csr, job}) => <CertificateDetails key={`certificate-${job.alias}`} certificate={csr} job={job}/>)}
 		</div>}

@@ -23,7 +23,7 @@ localhost {
 
     # API routes
     handle_path /api/* {
-        reverse_proxy 10.73.171.1:9999
+        reverse_proxy api:9999
     }
 
     # Everything else: static + SPA fallback

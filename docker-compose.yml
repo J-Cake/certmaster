@@ -62,6 +62,7 @@ services:
       - "9999:9999"
     volumes:
       - test:/etc/certmaster
+      - ./out/api:/usr/bin/api
     networks:
       - certmaster
 

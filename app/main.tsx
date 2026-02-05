@@ -34,7 +34,7 @@ root.render(<>
 		"/help/:article": ({ match }) => <Help article={match.pathname.groups['article']!}/>,
 		"/inspect/:alias": ({ match }) => <>
 			<JobQueue />
-			<Certificate certificateId={match.pathname.groups['alias']} />
+			<Certificate alias={match.pathname.groups['alias']} />
 		</>
 	}}>
 		<API.Provider value={new CertmasterApi(getApiUrl())}>

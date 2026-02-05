@@ -168,7 +168,7 @@
         --background-07: var(--shade-01);
         --foreground-07: var(--shade-07);
 
-        --background: var(--background-02);
+        --background: var(--background-01);
         --background-dull: rgba(0, 0, 0, 0.015);
 
         /* A factor used to alter a value under certain conditions */

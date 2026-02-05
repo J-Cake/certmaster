@@ -5,7 +5,7 @@ import {Link, RouterView} from "./router";
 import {Job} from "./lib/certmaster";
 import {topLevelModal} from "./modal";
 import NewCertificateModal from "./new-certificate";
-import {Status} from "./certificate";
+import Certificate, {Status} from "./certificate";
 
 export interface QueueProps {
 
@@ -93,6 +93,8 @@ interface JobQueueInnerParams {
 
 function JobQueueInner(props: JobQueueInnerParams) {
 	const [selected, setSelected] = React.useState<Record<string, boolean>>({});
+	const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
+
 	const api = React.useContext(API);
 
 	const all = React.useRef<HTMLInputElement>(null);
@@ -124,6 +126,10 @@ function JobQueueInner(props: JobQueueInnerParams) {
 		setSelected(prev => ({...prev, [id]: state}));
 	}, [setSelected]);
 
+	const expand = React.useCallback((id: string, state: boolean) => {
+		setExpanded(prev => ({ ...prev, [id]: state }));
+	}, [setExpanded]);
+
 	const enterIsClick = React.useCallback((e: React.KeyboardEvent<HTMLElement>) => {
 		if (e.key == "Enter" || e.key == "Space")
 			return e.currentTarget.click();
@@ -136,32 +142,43 @@ function JobQueueInner(props: JobQueueInnerParams) {
 		<table className="grid-table">
 			<thead className="grid-table-thead">
 				<tr>
+					<th className="grid-table-cell auto">{""}</th>
 					<th className="grid-table-cell"><input type={"checkbox"} key={"select-all"} ref={all}/></th>
-					<th className="grid-table-cell">{"CN"}</th>
-					{props.cols.client_id && <th className="grid-table-cell">{"ID"}</th>}
-					{props.cols.alt_name && <th className="grid-table-cell">{"Alias"}</th>}
+					<th className="grid-table-cell fill">{"CN"}</th>
+					{props.cols.client_id && <th className="grid-table-cell fill">{"ID"}</th>}
+					{props.cols.alt_name && <th className="grid-table-cell fill">{"Alias"}</th>}
 					<th className="grid-table-cell">{"Status"}</th>
 					{props.cols.actions && <th className="grid-table-cell">{"Action"}</th>}
 				</tr>
 			</thead>
 			<tbody className="grid-table-tbody">
 			{props.jobs.map(job =>
-				<tr className="job-queue-item grid-table-row" key={job.clientId}  tabIndex={0} onClick={() => setSelection(job.clientId, !selected[job.clientId])} onKeyDown={e => enterIsClick(e)}>
-					<td className="grid-table-cell"><input tabIndex={-1} type={"checkbox"} checked={selected[job.clientId]} onChange={e => setSelection(job.clientId, e.target.checked)}/></td>
-					<td className="grid-table-cell">{job.cn}</td>
-					{props.cols.client_id && <td className="grid-table-cell">{job.clientId}</td>}
-					{props.cols.alt_name && <td className="grid-table-cell">{job.alias}</td>}
-					<td className="grid-table-cell"><Status status={job.status as keyof Job['status']}/></td>
-					{props.cols.actions && <td className="grid-table-cell">
-						<div className="button-group" onClick={e => (e.preventDefault(), e.stopPropagation())}>
-							<button className="success symbolic" data-icon={"\ue8e8"} title={"Override challenge"}/>
-							<button className="danger symbolic" data-icon={"\ue5cd"} title={"Decline challenge"}/>
-							<button className="warning symbolic" data-icon={"\ue8f5"} title={"Ignore request"}/>
-							<Link to={`/inspect/${encodeURIComponent(job.alias)}`} className="button symbolic"
-								  data-icon={"\ue5cc"} title={"View certificate request"}/>
-						</div>
-					</td>}
-				</tr>)}
+				<>
+					<tr className={["job-queue-item", "grid-table-row", expanded[job.clientId] ? "expanded" : ""].join(" ")} key={job.clientId} tabIndex={0} onClick={() => setSelection(job.clientId, !selected[job.clientId])} onKeyDown={e => enterIsClick(e)}>
+						<td className="grid-table-cell auto" onClick={e => (e.preventDefault(), e.stopPropagation())}>
+							<button className="tertiary" data-icon={expanded[job.clientId] ? "\ue313" : "\ue315"} onClick={_ => expand(job.clientId, !expanded[job.clientId])} />
+						</td>
+						<td className="grid-table-cell"><input tabIndex={-1} type={"checkbox"} checked={selected[job.clientId]} onChange={e => setSelection(job.clientId, e.target.checked)}/></td>
+						<td className="grid-table-cell">{job.cn}</td>
+						{props.cols.client_id && <td className="grid-table-cell">{job.clientId}</td>}
+						{props.cols.alt_name && <td className="grid-table-cell">{job.alias}</td>}
+						<td className="grid-table-cell"><Status status={job.status as keyof Job['status']}/></td>
+						{props.cols.actions && <td className="grid-table-cell">
+							<div className="button-group" onClick={e => (e.preventDefault(), e.stopPropagation())}>
+								<button className="success symbolic" data-icon={"\ue8e8"} title={"Override challenge"}/>
+								<button className="danger symbolic" data-icon={"\ue5cd"} title={"Decline challenge"}/>
+								<button className="warning symbolic" data-icon={"\ue8f5"} title={"Ignore request"}/>
+								<Link to={`/inspect/${encodeURIComponent(job.alias)}`} className="button symbolic"
+									  data-icon={"\ue89e"} title={"View certificate request"}/>
+							</div>
+						</td>}
+					</tr>
+					{expanded[job.clientId] ? <tr className="job-queue-details">
+						<td {...{ colspan: "100%" }}> {/* React of course expects colSpan to be a number, but if you create an anonymous object it'll pass it straight through */}
+							<Certificate alias={job.alias} />
+						</td>
+					</tr> : null}
+				</>)}
 			</tbody>
 		</table>
 	</section>

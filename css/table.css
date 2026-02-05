@@ -26,7 +26,15 @@ th, td, div.grid-table-cell {
     white-space: nowrap;
 }
 
-tr:nth-child(even) {
+th.auto, td.auto, .grid-table-cell.auto {
+    width: min-content;
+}
+
+th.fill, td.fill, .grid-table-cell.fill {
+    width: 100%;
+}
+
+tr:not(.job-queue-details):nth-child(even) {
     background: var(--background-dull);
 }
 
@@ -51,4 +59,18 @@ div.grid-table-row {
 
 div.grid-table-cell {
     grid-row: 1;
+}
+
+.job-queue-item.expanded, .job-queue-details {
+    border: var(--border-dull);
+    border-radius: var(--radius-m);
+
+    background: var(--background-dull);
+}
+
+.job-queue-item.expanded {
+    border-bottom: none;
+}
+.job-queue-details {
+    border-top: none;
 }

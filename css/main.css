@@ -35,7 +35,7 @@
     display: grid;
 
     grid-template-rows: auto 1fr auto;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(1fr, auto) 1fr auto;
 
     padding: var(--spacing-s);
     grid-gap: var(--spacing-s);
